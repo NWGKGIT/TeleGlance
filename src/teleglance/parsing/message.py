@@ -1,8 +1,14 @@
-"""Parsers for message nodes on t.me preview pages."""
+"""Parsers for message nodes on t.me preview pages.
+
+No class names live here — all structure comes from :mod:`.selectors`, so
+markup drift is fixed by adjusting a :class:`Selectors` instance, not by
+editing parser logic.
+"""
 
 from __future__ import annotations
 
 from datetime import datetime
+from functools import partial
 
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
@@ -25,6 +31,7 @@ from ..models import (
 )
 from .entities import extract_rich_text
 from .registry import ParserRegistry
+from .selectors import DEFAULT_SELECTORS, Selectors
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -34,11 +41,14 @@ def _style_url(node: LexborNode | None) -> str | None:
     return bg_image_url(node.attributes.get("style")) if node is not None else None
 
 
-def _has_ancestor_class(node: LexborNode, stop: LexborNode, classes: set[str]) -> bool:
+def _classes(node: LexborNode) -> list[str]:
+    return (node.attributes.get("class") or "").split()
+
+
+def _has_ancestor_class(node: LexborNode, stop: LexborNode, classes: frozenset[str] | set[str]) -> bool:
     parent = node.parent
     while parent is not None and parent is not stop:
-        parent_classes = (parent.attributes.get("class") or "").split()
-        if any(c in classes for c in parent_classes):
+        if any(c in classes for c in _classes(parent)):
             return True
         parent = parent.parent
     return False
@@ -51,163 +61,158 @@ def _msg_id_from_url(url: str | None) -> int | None:
     return int(tail) if tail.isdigit() else None
 
 
+def _text_of(container: LexborNode, selector: str) -> str | None:
+    node = container.css_first(selector)
+    return clean_text(node.text(deep=True)) if node is not None else None
+
+
 # ---------------------------------------------------------------------------
-# built-in block parsers (all take the whole message node)
+# built-in block parsers — each takes the whole message node plus the active
+# Selectors, and returns whatever media it recognizes
 
 
-def parse_photos(node: LexborNode) -> list[Media]:
+def parse_photos(node: LexborNode, sel: Selectors) -> list[Media]:
     out: list[Media] = []
-    for wrap in node.css("a.tgme_widget_message_photo_wrap"):
+    for wrap in node.css(sel.photo):
         url = _style_url(wrap)
         if url:
             out.append(Photo(url=url))
     return out
 
 
-def parse_videos(node: LexborNode) -> list[Media]:
+def parse_videos(node: LexborNode, sel: Selectors) -> list[Media]:
     out: list[Media] = []
-    for player in node.css(".tgme_widget_message_video_player"):
-        video = player.css_first("video")
-        classes = (video.attributes.get("class") or "") if video is not None else ""
-        duration = player.css_first("time")
+    for player in node.css(sel.video_player):
+        video = player.css_first(sel.video)
+        video_classes = (video.attributes.get("class") or "") if video is not None else ""
+        duration_node = player.css_first(sel.video_duration)
+        duration = clean_text(duration_node.text()) if duration_node is not None else None
+        url = video.attributes.get("src") if video is not None else None
         item: Media
-        if "roundvideo" in classes or player.css_first(".tgme_widget_message_roundvideo") is not None:
+        if sel.roundvideo_class in video_classes or player.css_first(sel.roundvideo) is not None:
             item = RoundVideo(
-                url=video.attributes.get("src") if video is not None else None,
-                thumb_url=_style_url(player.css_first(".tgme_widget_message_roundvideo_thumb")),
-                duration=clean_text(duration.text()) if duration is not None else None,
+                url=url,
+                thumb_url=_style_url(player.css_first(sel.roundvideo_thumb)),
+                duration=duration,
             )
         else:
             item = Video(
-                url=video.attributes.get("src") if video is not None else None,
-                thumb_url=_style_url(player.css_first(".tgme_widget_message_video_thumb")),
-                duration=clean_text(duration.text()) if duration is not None else None,
+                url=url,
+                thumb_url=_style_url(player.css_first(sel.video_thumb)),
+                duration=duration,
             )
         out.append(item)
     return out
 
 
-def parse_voices(node: LexborNode) -> list[Media]:
+def parse_voices(node: LexborNode, sel: Selectors) -> list[Media]:
     out: list[Media] = []
-    for audio in node.css("audio.tgme_widget_message_voice"):
+    for audio in node.css(sel.voice):
         src = audio.attributes.get("src")
         if not src:
             continue
-        duration = node.css_first("time.tgme_widget_message_voice_duration")
+        duration_node = node.css_first(sel.voice_duration)
         out.append(
-            Voice(url=src, duration=clean_text(duration.text()) if duration is not None else None)
-        )
-    return out
-
-
-def parse_documents(node: LexborNode) -> list[Media]:
-    out: list[Media] = []
-    for doc in node.css(".tgme_widget_message_document"):
-        title = doc.css_first(".tgme_widget_message_document_title")
-        extra = doc.css_first(".tgme_widget_message_document_extra")
-        if title is None:
-            continue
-        out.append(
-            DocumentRef(
-                title=clean_text(title.text(deep=True)) or "",
-                extra=clean_text(extra.text(deep=True)) if extra is not None else None,
+            Voice(
+                url=src,
+                duration=clean_text(duration_node.text()) if duration_node is not None else None,
             )
         )
     return out
 
 
-def parse_stickers(node: LexborNode) -> list[Media]:
+def parse_documents(node: LexborNode, sel: Selectors) -> list[Media]:
     out: list[Media] = []
-    for sticker in node.css(".tgme_widget_message_sticker_wrap, .tgme_widget_message_sticker"):
-        classes = (sticker.attributes.get("class") or "").split()
-        if "tgme_widget_message_sticker_wrap" in classes:
-            inner = sticker.css_first(".tgme_widget_message_sticker")
+    for doc in node.css(sel.document):
+        title = _text_of(doc, sel.document_title)
+        if title is None:
+            continue
+        out.append(DocumentRef(title=title, extra=_text_of(doc, sel.document_extra)))
+    return out
+
+
+def parse_stickers(node: LexborNode, sel: Selectors) -> list[Media]:
+    out: list[Media] = []
+    for sticker in node.css(sel.sticker):
+        if sel.sticker_wrap_class in _classes(sticker):
+            inner = sticker.css_first(sel.sticker_image)
             target = inner if inner is not None else sticker
-        elif _has_ancestor_class(sticker, node, {"tgme_widget_message_sticker_wrap"}):
+        elif _has_ancestor_class(sticker, node, {sel.sticker_wrap_class}):
             continue  # already handled through its wrap
         else:
             target = sticker
         url = (
-            target.attributes.get("data-webp")
+            target.attributes.get(sel.sticker_webp_attr)
             or _style_url(target)
             or (target.attributes.get("src") if target.tag == "img" else None)
         )
-        out.append(Sticker(url=url, alt=target.attributes.get("data-sticker-emoji")))
+        out.append(Sticker(url=url, alt=target.attributes.get(sel.sticker_emoji_attr)))
     return out
 
 
-def parse_polls(node: LexborNode) -> list[Media]:
+def parse_polls(node: LexborNode, sel: Selectors) -> list[Media]:
     out: list[Media] = []
-    for poll in node.css(".tgme_widget_message_poll"):
-        question = poll.css_first(".tgme_widget_message_poll_question")
-        kind = poll.css_first(".tgme_widget_message_poll_type")
+    for poll in node.css(sel.poll):
         options = []
-        for option in poll.css(".tgme_widget_message_poll_option"):
-            text = option.css_first(".tgme_widget_message_poll_option_text")
-            percent = option.css_first(".tgme_widget_message_poll_option_percent")
-            percent_value = parse_count(percent.text()) if percent is not None else None
+        for option in poll.css(sel.poll_option):
+            percent = option.css_first(sel.poll_option_percent)
             options.append(
                 PollOption(
-                    text=clean_text(text.text(deep=True)) or "" if text is not None else "",
-                    percent=percent_value,
+                    text=_text_of(option, sel.poll_option_text) or "",
+                    percent=parse_count(percent.text()) if percent is not None else None,
                 )
             )
-        voters = node.css_first(".tgme_widget_message_voters")
         out.append(
             Poll(
-                question=clean_text(question.text(deep=True)) or "" if question is not None else "",
-                kind=clean_text(kind.text()) if kind is not None else None,
+                question=_text_of(poll, sel.poll_question) or "",
+                kind=_text_of(poll, sel.poll_kind),
                 options=options,
-                voters=clean_text(voters.text()) if voters is not None else None,
+                voters=_text_of(node, sel.poll_voters),
             )
         )
     return out
 
 
-def parse_link_previews(node: LexborNode) -> list[Media]:
+def parse_link_previews(node: LexborNode, sel: Selectors) -> list[Media]:
     out: list[Media] = []
-    for preview in node.css("a.tgme_widget_message_link_preview"):
-        image = preview.css_first(".link_preview_image, .link_preview_right_image")
-        site = preview.css_first(".link_preview_site_name")
-        title = preview.css_first(".link_preview_title")
-        description = preview.css_first(".link_preview_description")
+    for preview in node.css(sel.link_preview):
         out.append(
             LinkPreview(
                 url=preview.attributes.get("href") or "",
-                site_name=clean_text(site.text(deep=True)) if site is not None else None,
-                title=clean_text(title.text(deep=True)) if title is not None else None,
-                description=clean_text(description.text(deep=True))
-                if description is not None
-                else None,
-                image_url=_style_url(image),
+                site_name=_text_of(preview, sel.link_preview_site_name),
+                title=_text_of(preview, sel.link_preview_title),
+                description=_text_of(preview, sel.link_preview_description),
+                image_url=_style_url(preview.css_first(sel.link_preview_image)),
             )
         )
     return out
 
 
-def parse_locations(node: LexborNode) -> list[Media]:
+def parse_locations(node: LexborNode, sel: Selectors) -> list[Media]:
     out: list[Media] = []
-    for wrap in node.css("a.tgme_widget_message_location_wrap"):
+    for wrap in node.css(sel.location):
         out.append(
             Location(
                 url=wrap.attributes.get("href"),
-                image_url=_style_url(wrap.css_first(".tgme_widget_message_location")),
+                image_url=_style_url(wrap.css_first(sel.location_image)),
             )
         )
     return out
 
 
-def default_registry() -> ParserRegistry:
-    """A fresh registry with all built-in block parsers."""
+def default_registry(selectors: Selectors | None = None) -> ParserRegistry:
+    """A fresh registry with all built-in block parsers bound to the given
+    selectors (defaults to :data:`DEFAULT_SELECTORS`)."""
+    sel = selectors or DEFAULT_SELECTORS
     registry = ParserRegistry()
-    registry.register("photo", parse_photos)
-    registry.register("video", parse_videos)
-    registry.register("voice", parse_voices)
-    registry.register("document", parse_documents)
-    registry.register("sticker", parse_stickers)
-    registry.register("poll", parse_polls)
-    registry.register("link_preview", parse_link_previews)
-    registry.register("location", parse_locations)
+    registry.register("photo", partial(parse_photos, sel=sel))
+    registry.register("video", partial(parse_videos, sel=sel))
+    registry.register("voice", partial(parse_voices, sel=sel))
+    registry.register("document", partial(parse_documents, sel=sel))
+    registry.register("sticker", partial(parse_stickers, sel=sel))
+    registry.register("poll", partial(parse_polls, sel=sel))
+    registry.register("link_preview", partial(parse_link_previews, sel=sel))
+    registry.register("location", partial(parse_locations, sel=sel))
     return registry
 
 
@@ -215,10 +220,16 @@ def default_registry() -> ParserRegistry:
 # message + feed parsing
 
 
-def parse_message(node: LexborNode, registry: ParserRegistry) -> Message | None:
-    """Parse one ``.tgme_widget_message`` node. Returns None for nodes that
-    carry no addressable post (service messages without a data-post id)."""
-    data_post = node.attributes.get("data-post")
+def parse_message(
+    node: LexborNode,
+    registry: ParserRegistry,
+    selectors: Selectors | None = None,
+) -> Message | None:
+    """Parse one message node. Returns None for nodes that carry no
+    addressable post (service messages without a post id)."""
+    sel = selectors or DEFAULT_SELECTORS
+
+    data_post = node.attributes.get(sel.post_attr)
     if not data_post or "/" not in data_post:
         return None
     channel, _, msg_id_str = data_post.rpartition("/")
@@ -227,36 +238,29 @@ def parse_message(node: LexborNode, registry: ParserRegistry) -> Message | None:
     msg_id = int(msg_id_str)
 
     date = None
-    time_node = node.css_first(".tgme_widget_message_date time, time")
+    time_node = node.css_first(sel.date_time)
     if time_node is not None:
-        raw = time_node.attributes.get("datetime")
+        raw = time_node.attributes.get(sel.datetime_attr)
         if raw:
             try:
                 date = datetime.fromisoformat(raw)
             except ValueError:
                 date = None
 
-    views_node = node.css_first(".tgme_widget_message_views")
+    views_node = node.css_first(sel.views)
     views_str = clean_text(views_node.text()) if views_node is not None else None
-
-    author_node = node.css_first(".tgme_widget_message_from_author")
-    author = clean_text(author_node.text(deep=True)) if author_node is not None else None
 
     text = html = markdown = None
     entities = []
-    for candidate in node.css(".tgme_widget_message_text"):
-        if _has_ancestor_class(
-            candidate,
-            node,
-            {"tgme_widget_message_reply", "tgme_widget_message_link_preview"},
-        ):
+    for candidate in node.css(sel.text):
+        if _has_ancestor_class(candidate, node, sel.text_excluded_ancestor_classes):
             continue
         rich = extract_rich_text(candidate)
         text, html, markdown, entities = rich.text, rich.html, rich.markdown, rich.entities
         break
 
     forwarded = None
-    fwd_node = node.css_first(".tgme_widget_message_forwarded_from_name")
+    fwd_node = node.css_first(sel.forward_name)
     if fwd_node is not None:
         forwarded = ForwardHeader(
             name=clean_text(fwd_node.text(deep=True)) or "",
@@ -264,16 +268,12 @@ def parse_message(node: LexborNode, registry: ParserRegistry) -> Message | None:
         )
 
     reply = None
-    reply_node = node.css_first("a.tgme_widget_message_reply")
+    reply_node = node.css_first(sel.reply)
     if reply_node is not None:
-        reply_author = reply_node.css_first(".tgme_widget_message_author_name")
-        reply_text = reply_node.css_first(
-            ".tgme_widget_message_reply_text, .tgme_widget_message_metatext, .tgme_widget_message_text"
-        )
         reply_url = reply_node.attributes.get("href")
         reply = ReplyHeader(
-            author=clean_text(reply_author.text(deep=True)) if reply_author is not None else None,
-            text=clean_text(reply_text.text(deep=True)) if reply_text is not None else None,
+            author=_text_of(reply_node, sel.reply_author),
+            text=_text_of(reply_node, sel.reply_text),
             url=reply_url,
             msg_id=_msg_id_from_url(reply_url),
         )
@@ -285,7 +285,7 @@ def parse_message(node: LexborNode, registry: ParserRegistry) -> Message | None:
         date=date,
         views=parse_count(views_str),
         views_str=views_str,
-        author=author,
+        author=_text_of(node, sel.author),
         text=text or "",
         html=html,
         markdown=markdown,
@@ -297,16 +297,20 @@ def parse_message(node: LexborNode, registry: ParserRegistry) -> Message | None:
     )
 
 
-def parse_feed(html: str, registry: ParserRegistry) -> list[Message]:
+def parse_feed(
+    html: str,
+    registry: ParserRegistry,
+    selectors: Selectors | None = None,
+) -> list[Message]:
     """Parse a ``t.me/s/<channel>`` page (or fragment) into messages,
     in page order (oldest first)."""
+    sel = selectors or DEFAULT_SELECTORS
     tree = LexborHTMLParser(html)
     messages = []
-    for node in tree.css(".tgme_widget_message"):
-        classes = (node.attributes.get("class") or "").split()
-        if "service_message" in classes:
+    for node in tree.css(sel.message):
+        if sel.service_message_class in _classes(node):
             continue
-        message = parse_message(node, registry)
+        message = parse_message(node, registry, sel)
         if message is not None:
             messages.append(message)
     return messages

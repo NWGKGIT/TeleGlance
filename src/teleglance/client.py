@@ -14,6 +14,7 @@ from .models.media import Media
 from .parsing import PageKind, classify_page, parse_channel, parse_feed
 from .parsing.message import default_registry
 from .parsing.registry import ParserRegistry
+from .parsing.selectors import DEFAULT_SELECTORS, Selectors
 from .transport import RequestHook, ResponseHook, Transport
 
 
@@ -40,10 +41,12 @@ class TeleGlanceClient:
         request_hooks: list[RequestHook] | None = None,
         response_hooks: list[ResponseHook] | None = None,
         registry: ParserRegistry | None = None,
+        selectors: Selectors | None = None,
         transport: Transport | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
-        self.registry = registry or default_registry()
+        self.selectors = selectors or DEFAULT_SELECTORS
+        self.registry = registry or default_registry(self.selectors)
         self._transport = transport or Transport(
             rate_limit=rate_limit,
             retries=retries,
@@ -87,7 +90,7 @@ class TeleGlanceClient:
         if response.status_code == 404:
             raise ChannelNotFound(channel)
         html = response.text
-        kind = classify_page(html)
+        kind = classify_page(html, self.selectors)
         if kind == PageKind.FEED:
             return html
         if kind == PageKind.CARD:
@@ -104,7 +107,7 @@ class TeleGlanceClient:
         response = await self._transport.get(f"{self.base_url}/s/{name}")
         if response.status_code == 404:
             raise ChannelNotFound(name)
-        parsed = parse_channel(response.text, name)
+        parsed = parse_channel(response.text, name, self.selectors)
         if parsed is None:
             raise ChannelNotFound(name)
         return parsed
@@ -133,7 +136,7 @@ class TeleGlanceClient:
         if query is not None:
             params["q"] = query
         html = await self._fetch_feed_page(name, params)
-        return parse_feed(html, self.registry)
+        return parse_feed(html, self.registry, self.selectors)
 
     async def iter_messages(
         self,
@@ -170,7 +173,7 @@ class TeleGlanceClient:
         )
         if response.status_code == 404:
             raise MessageNotFound(name, msg_id)
-        messages = parse_feed(response.text, self.registry)
+        messages = parse_feed(response.text, self.registry, self.selectors)
         for message in messages:
             if message.id == msg_id:
                 return message

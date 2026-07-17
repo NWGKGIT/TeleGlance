@@ -30,7 +30,7 @@ from .models import (
     Video,
     Voice,
 )
-from .parsing import ParserRegistry, default_registry
+from .parsing import DEFAULT_SELECTORS, ParserRegistry, Selectors, default_registry
 from .transport import Transport
 
 __version__ = "0.1.0"
@@ -43,6 +43,7 @@ __all__ = [
     "ChannelNotFound",
     "ChannelPrivate",
     "Client",
+    "DEFAULT_SELECTORS",
     "DocumentRef",
     "DownloadError",
     "Entity",
@@ -60,6 +61,7 @@ __all__ = [
     "RateLimited",
     "ReplyHeader",
     "RoundVideo",
+    "Selectors",
     "Sticker",
     "TeleGlanceClient",
     "TeleGlanceError",

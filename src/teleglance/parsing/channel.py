@@ -1,12 +1,17 @@
-"""Parsers for channel-level information and page-status detection."""
+"""Parsers for channel-level information and page-status detection.
+
+Like the message parsers, all structure comes from :class:`Selectors` —
+nothing here hard-codes t.me class names.
+"""
 
 from __future__ import annotations
 
-from selectolax.lexbor import LexborHTMLParser
+from selectolax.lexbor import LexborHTMLParser, LexborNode
 
 from .._utils import clean_text, parse_count
 from ..models import Channel, ChannelCounts
 from .entities import inner_html
+from .selectors import DEFAULT_SELECTORS, Selectors
 
 
 class PageKind:
@@ -17,80 +22,87 @@ class PageKind:
     UNKNOWN = "unknown"  # neither — treat as not found
 
 
-def classify_page(html: str) -> str:
+def classify_page(html: str, selectors: Selectors | None = None) -> str:
+    sel = selectors or DEFAULT_SELECTORS
     tree = LexborHTMLParser(html)
-    if tree.css_first(".tgme_channel_info") is not None:
+    if tree.css_first(sel.channel_info) is not None:
         return PageKind.FEED
-    if tree.css_first(".tgme_page .tgme_page_title, .tgme_page_title") is not None:
+    if tree.css_first(sel.card_title) is not None:
         return PageKind.CARD
     return PageKind.UNKNOWN
 
 
-def parse_channel(html: str, username: str) -> Channel | None:
+def _text_of(container: LexborNode, selector: str) -> str | None:
+    node = container.css_first(selector)
+    return clean_text(node.text(deep=True)) if node is not None else None
+
+
+def _html_of(container: LexborNode, selector: str) -> str | None:
+    node = container.css_first(selector)
+    return inner_html(node) if node is not None else None
+
+
+def parse_channel(html: str, username: str, selectors: Selectors | None = None) -> Channel | None:
     """Parse channel info from either a /s/ feed page (rich: counters) or a
     profile card page (title/description only). Returns None if the page has
     no channel data at all."""
+    sel = selectors or DEFAULT_SELECTORS
     tree = LexborHTMLParser(html)
 
-    info = tree.css_first(".tgme_channel_info")
+    info = tree.css_first(sel.channel_info)
     if info is not None:
-        title_node = info.css_first(".tgme_channel_info_header_title")
-        username_node = info.css_first(".tgme_channel_info_header_username a")
-        description_node = info.css_first(".tgme_channel_info_description")
-        avatar = info.css_first(".tgme_page_photo_image img, img.tgme_page_photo_image, img")
-
-        raw_counts: dict[str, str] = {}
-        for counter in info.css(".tgme_channel_info_counter"):
-            value = counter.css_first(".counter_value")
-            kind = counter.css_first(".counter_type")
-            if value is not None and kind is not None:
-                label = clean_text(kind.text()) or ""
-                raw_counts[label] = clean_text(value.text()) or ""
-
+        username_node = info.css_first(sel.channel_username)
         if username_node is not None:
             handle = (clean_text(username_node.text()) or "").lstrip("@") or username
         else:
             handle = username
 
-        counts = ChannelCounts(
-            subscribers=parse_count(raw_counts.get("subscribers") or raw_counts.get("subscriber")),
-            photos=parse_count(raw_counts.get("photos") or raw_counts.get("photo")),
-            videos=parse_count(raw_counts.get("videos") or raw_counts.get("video")),
-            files=parse_count(raw_counts.get("files") or raw_counts.get("file")),
-            links=parse_count(raw_counts.get("links") or raw_counts.get("link")),
-            raw=raw_counts,
-        )
+        raw_counts: dict[str, str] = {}
+        for counter in info.css(sel.channel_counter):
+            value = _text_of(counter, sel.counter_value)
+            kind = _text_of(counter, sel.counter_type)
+            if value and kind:
+                raw_counts[kind] = value
+
+        def count_of(*labels: str) -> int | None:
+            for label in labels:
+                if label in raw_counts:
+                    return parse_count(raw_counts[label])
+            return None
+
+        avatar = info.css_first(sel.channel_avatar)
         return Channel(
             username=handle,
             url=f"https://t.me/{handle}",
-            title=clean_text(title_node.text(deep=True)) or handle if title_node is not None else handle,
-            description=clean_text(description_node.text(deep=True))
-            if description_node is not None
-            else None,
-            description_html=inner_html(description_node) if description_node is not None else None,
+            title=_text_of(info, sel.channel_title) or handle,
+            description=_text_of(info, sel.channel_description),
+            description_html=_html_of(info, sel.channel_description),
             avatar_url=avatar.attributes.get("src") if avatar is not None else None,
-            counts=counts,
+            counts=ChannelCounts(
+                subscribers=count_of("subscribers", "subscriber"),
+                photos=count_of("photos", "photo"),
+                videos=count_of("videos", "video"),
+                files=count_of("files", "file"),
+                links=count_of("links", "link"),
+                raw=raw_counts,
+            ),
         )
 
-    title_node = tree.css_first(".tgme_page_title")
-    if title_node is not None:
-        description_node = tree.css_first(".tgme_page_description")
-        avatar = tree.css_first(".tgme_page_photo_image img, img.tgme_page_photo_image")
-        extra = tree.css_first(".tgme_page_extra")
+    title = _text_of(tree.root, sel.card_title) if tree.root is not None else None
+    if title is not None:
+        avatar = tree.css_first(sel.card_avatar)
         raw_counts = {}
         subscribers = None
-        extra_text = clean_text(extra.text()) if extra is not None else None
+        extra_text = _text_of(tree.root, sel.card_extra)
         if extra_text and "subscriber" in extra_text:
             raw_counts["subscribers"] = extra_text
             subscribers = parse_count(extra_text)
         return Channel(
             username=username,
             url=f"https://t.me/{username}",
-            title=clean_text(title_node.text(deep=True)) or username,
-            description=clean_text(description_node.text(deep=True))
-            if description_node is not None
-            else None,
-            description_html=inner_html(description_node) if description_node is not None else None,
+            title=title,
+            description=_text_of(tree.root, sel.card_description),
+            description_html=_html_of(tree.root, sel.card_description),
             avatar_url=avatar.attributes.get("src") if avatar is not None else None,
             counts=ChannelCounts(subscribers=subscribers, raw=raw_counts),
         )
