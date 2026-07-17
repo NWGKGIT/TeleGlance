@@ -47,10 +47,36 @@ teleglance watch telegram --interval 20         # stream new posts as NDJSON
 teleglance download telegram 4820 -o downloads/
 ```
 
-## Extending the parsers
+## Built for markup drift
 
-Media blocks are parsed by a registry you can amend — useful when Telegram
-ships a block type the library doesn't know yet:
+Telegram can change the preview markup at any time, so adapting must never
+require re-architecting. Three layers, cheapest first:
+
+**1. Selectors — every structural assumption in one place.** No parser
+hard-codes a t.me class name; they all read from a `Selectors` object
+(`src/teleglance/parsing/selectors.py`). If Telegram renames a class, fix it
+at runtime without waiting for a release:
+
+```python
+from teleglance import DEFAULT_SELECTORS, TeleGlanceClient
+
+selectors = DEFAULT_SELECTORS.replace(views=".tgme_widget_message_view_count")
+client = TeleGlanceClient(selectors=selectors)
+```
+
+or load overrides from config, so selector fixes ship as data:
+
+```python
+from teleglance import Selectors
+selectors = Selectors.from_dict(json.load(open("selectors.json")))  # typos raise
+```
+
+As maintainer, the permanent fix is editing the defaults in `selectors.py` —
+one file, no logic changes.
+
+**2. Parser registry — for new block types.** Media blocks are parsed by a
+registry you can amend when Telegram ships something the library doesn't know
+yet:
 
 ```python
 from teleglance import TeleGlanceClient, Unsupported, default_registry
@@ -66,8 +92,28 @@ client = TeleGlanceClient(registry=registry)
 ```
 
 A parser that raises is logged and skipped — markup drift in one block type
-never breaks the rest of the message. Every `Message` also keeps `raw_html`,
-so nothing the parsers miss is ever lost.
+never breaks the rest of the message.
+
+**3. `raw_html` — the safety net.** Every `Message` keeps the full original
+HTML of its node, so nothing the parsers miss is ever lost; you can always
+post-process what a drifted selector failed to extract.
+
+When drift happens: record the live page (`uv run scripts/record_fixtures.py
+<channel>`), diff it against `tests/fixtures/`, adjust `selectors.py`, update
+the fixture, and the test suite validates the fix offline.
+
+## Will Telegram block this?
+
+t.me previews are deliberately public: server-rendered static HTML, no
+JavaScript challenge, no Cloudflare, no login. Enforcement is soft, IP-based
+rate limiting that only bites at high volume (thousands of requests). The
+defaults here — 1 req/s throttling, browser-like headers, backoff honoring
+`Retry-After`, and proxy support for scale — stay comfortably under it, so a
+headless browser is unnecessary weight. If Telegram ever hardens the
+endpoint, the fetching side is an isolated seam: parsers consume plain HTML
+strings, and `TeleGlanceClient(transport=...)` accepts any object with the
+`Transport` interface, so a browser-based fetcher (Playwright etc.) could be
+dropped in without touching a single parser.
 
 ## Limitations (inherent to web previews)
 
@@ -75,7 +121,8 @@ so nothing the parsers miss is ever lost.
 - Feed pages hold ~20 messages; deep history means many requests — keep the rate limit polite.
 - Documents expose title/size but **no direct download URL**.
 - View counts and subscriber counts are the display values ("1.2K") — parsed integers are approximate; the raw strings are always kept.
-- Telegram can change the preview markup at any time. Parsers degrade gracefully (fields become `None`, unknown blocks are skipped, `raw_html` survives), and the test suite runs offline against fixtures in `tests/fixtures/`. To check the fixtures against the live site, record real pages with `uv run scripts/record_fixtures.py <channel>` from a machine that can reach t.me.
+- History depth via previews is capped by Telegram (reports range from ~100 to ~2000 messages per channel depending on the channel); deeper archives need account-based access, which is out of scope by design.
+- Telegram can change the preview markup at any time. Parsers degrade gracefully (fields become `None`, unknown blocks are skipped, `raw_html` survives) — see [Built for markup drift](#built-for-markup-drift) for how to adapt.
 
 ## Development
 
