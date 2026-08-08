@@ -9,10 +9,12 @@ from __future__ import annotations
 
 from datetime import datetime
 from functools import partial
+from urllib.parse import parse_qs, urlparse
 
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
 from .._utils import bg_image_url, clean_text, parse_count
+from ..errors import ParseError
 from ..models import (
     DocumentRef,
     ForwardHeader,
@@ -23,6 +25,7 @@ from ..models import (
     Photo,
     Poll,
     PollOption,
+    Reaction,
     ReplyHeader,
     RoundVideo,
     Sticker,
@@ -45,7 +48,9 @@ def _classes(node: LexborNode) -> list[str]:
     return (node.attributes.get("class") or "").split()
 
 
-def _has_ancestor_class(node: LexborNode, stop: LexborNode, classes: frozenset[str] | set[str]) -> bool:
+def _has_ancestor_class(
+    node: LexborNode, stop: LexborNode, classes: frozenset[str] | set[str]
+) -> bool:
     parent = node.parent
     while parent is not None and parent is not stop:
         if any(c in classes for c in _classes(parent)):
@@ -64,6 +69,20 @@ def _msg_id_from_url(url: str | None) -> int | None:
 def _text_of(container: LexborNode, selector: str) -> str | None:
     node = container.css_first(selector)
     return clean_text(node.text(deep=True)) if node is not None else None
+
+
+def _coordinates(url: str | None) -> tuple[float | None, float | None]:
+    if not url:
+        return None, None
+    query = parse_qs(urlparse(url).query)
+    value = next((query[key][0] for key in ("ll", "q") if query.get(key)), None)
+    if not value or "," not in value:
+        return None, None
+    lat, lon = value.split(",", 1)
+    try:
+        return float(lat), float(lon)
+    except ValueError:
+        return None, None
 
 
 # ---------------------------------------------------------------------------
@@ -191,10 +210,14 @@ def parse_link_previews(node: LexborNode, sel: Selectors) -> list[Media]:
 def parse_locations(node: LexborNode, sel: Selectors) -> list[Media]:
     out: list[Media] = []
     for wrap in node.css(sel.location):
+        url = wrap.attributes.get("href")
+        latitude, longitude = _coordinates(url)
         out.append(
             Location(
-                url=wrap.attributes.get("href"),
+                url=url,
                 image_url=_style_url(wrap.css_first(sel.location_image)),
+                latitude=latitude,
+                longitude=longitude,
             )
         )
     return out
@@ -278,6 +301,25 @@ def parse_message(
             msg_id=_msg_id_from_url(reply_url),
         )
 
+    reactions = []
+    for reaction_node in node.css(sel.reaction):
+        emoji_node = reaction_node.css_first(sel.reaction_emoji)
+        emoji = clean_text(emoji_node.text(deep=True)) if emoji_node is not None else None
+        count_str = _text_of(reaction_node, sel.reaction_count)
+        if emoji:
+            reactions.append(
+                Reaction(
+                    emoji=emoji,
+                    count=parse_count(count_str),
+                    count_str=count_str,
+                    custom_emoji_id=(
+                        emoji_node.attributes.get("emoji-id") if emoji_node is not None else None
+                    ),
+                )
+            )
+
+    comments_str = _text_of(node, sel.comments)
+
     return Message(
         id=msg_id,
         channel=channel,
@@ -293,6 +335,10 @@ def parse_message(
         media=registry.extract(node),
         forwarded_from=forwarded,
         reply_to=reply,
+        edited=node.css_first(sel.edited) is not None,
+        reactions=reactions,
+        comments=parse_count(comments_str),
+        comments_str=comments_str,
         raw_html=node.html or "",
     )
 
@@ -301,16 +347,22 @@ def parse_feed(
     html: str,
     registry: ParserRegistry,
     selectors: Selectors | None = None,
+    *,
+    strict: bool = False,
 ) -> list[Message]:
     """Parse a ``t.me/s/<channel>`` page (or fragment) into messages,
     in page order (oldest first)."""
     sel = selectors or DEFAULT_SELECTORS
     tree = LexborHTMLParser(html)
     messages = []
+    candidates = 0
     for node in tree.css(sel.message):
         if sel.service_message_class in _classes(node):
             continue
+        candidates += 1
         message = parse_message(node, registry, sel)
         if message is not None:
             messages.append(message)
+    if strict and candidates and not messages:
+        raise ParseError(f"found {candidates} message container(s), but none had a valid post id")
     return messages

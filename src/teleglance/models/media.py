@@ -6,7 +6,7 @@ media round-trips cleanly through ``model_dump_json`` / ``model_validate_json``.
 
 from __future__ import annotations
 
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
@@ -60,7 +60,7 @@ class Poll(BaseModel):
     type: Literal["poll"] = "poll"
     question: str
     kind: str | None = None  # "Anonymous Poll", "Quiz", ... as displayed
-    options: list[PollOption] = []
+    options: list[PollOption] = Field(default_factory=list)
     voters: str | None = None  # raw display value, e.g. "12.4K voted"
 
 
@@ -77,6 +77,8 @@ class Location(BaseModel):
     type: Literal["location"] = "location"
     url: str | None = None  # maps link
     image_url: str | None = None  # static map preview
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 class Unsupported(BaseModel):
@@ -88,17 +90,15 @@ class Unsupported(BaseModel):
 
 
 Media = Annotated[
-    Union[
-        Photo,
-        Video,
-        RoundVideo,
-        Voice,
-        DocumentRef,
-        Sticker,
-        Poll,
-        LinkPreview,
-        Location,
-        Unsupported,
-    ],
+    Photo
+    | Video
+    | RoundVideo
+    | Voice
+    | DocumentRef
+    | Sticker
+    | Poll
+    | LinkPreview
+    | Location
+    | Unsupported,
     Field(discriminator="type"),
 ]

@@ -11,6 +11,8 @@ wheels/
 
 # Test / tool caches
 .pytest_cache/
+.coverage
+htmlcov/
 
 # Live-recorded fixtures (scratch, machine-specific)
 tests/fixtures/live/

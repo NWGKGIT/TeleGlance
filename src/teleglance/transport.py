@@ -15,12 +15,14 @@ import asyncio
 import random
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import asynccontextmanager
-from typing import Any
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
+from typing import Any, Protocol
 
 import httpx
 
-from .errors import RateLimited
+from .errors import RateLimited, RequestFailed
 
 DEFAULT_HEADERS = {
     "User-Agent": (
@@ -33,6 +35,14 @@ DEFAULT_HEADERS = {
 
 RequestHook = Callable[[httpx.Request], Awaitable[None]]
 ResponseHook = Callable[[httpx.Response], Awaitable[None]]
+
+
+class TransportProtocol(Protocol):
+    async def get(self, url: str, *, params: dict[str, Any] | None = None) -> httpx.Response: ...
+
+    def stream(self, url: str) -> AbstractAsyncContextManager[httpx.Response]: ...
+
+    async def aclose(self) -> None: ...
 
 
 class Transport:
@@ -57,8 +67,16 @@ class Transport:
         client — bring your own configured ``httpx.AsyncClient``; the other
             connection options are ignored in that case.
         """
+        if rate_limit < 0:
+            raise ValueError("rate_limit must be non-negative")
+        if retries < 0:
+            raise ValueError("retries must be non-negative")
+        if backoff_base < 0 or backoff_max < 0:
+            raise ValueError("backoff values must be non-negative")
+        if timeout <= 0:
+            raise ValueError("timeout must be positive")
         self._min_interval = 1.0 / rate_limit if rate_limit > 0 else 0.0
-        self._retries = max(0, retries)
+        self._retries = retries
         self._backoff_base = backoff_base
         self._backoff_max = backoff_max
         self._owns_client = client is None
@@ -89,7 +107,7 @@ class Transport:
         if retry_after is not None:
             return min(retry_after, self._backoff_max)
         delay = min(self._backoff_base * (2**attempt), self._backoff_max)
-        return delay + random.uniform(0, delay / 4)
+        return float(delay + random.uniform(0, delay / 4))
 
     @staticmethod
     def _retry_after(response: httpx.Response) -> float | None:
@@ -97,11 +115,20 @@ class Transport:
         try:
             return float(value) if value is not None else None
         except ValueError:
-            return None
+            try:
+                retry_at = parsedate_to_datetime(value)
+            except (TypeError, ValueError, OverflowError):
+                return None
+            if retry_at.tzinfo is None:
+                retry_at = retry_at.replace(tzinfo=timezone.utc)
+            return max(0.0, (retry_at - datetime.now(timezone.utc)).total_seconds())
 
     async def get(self, url: str, *, params: dict[str, Any] | None = None) -> httpx.Response:
-        """GET with throttling and retries. 4xx other than 429 is returned to
-        the caller (page-level errors carry meaning here), 429/5xx are retried."""
+        """GET with throttling and retries.
+
+        4xx responses other than 429 are returned so callers can apply page
+        semantics. Exhausted network failures and 5xx responses are wrapped.
+        """
         last_exc: Exception | None = None
         for attempt in range(self._retries + 1):
             await self._throttle()
@@ -110,7 +137,7 @@ class Transport:
             except httpx.TransportError as exc:
                 last_exc = exc
                 if attempt == self._retries:
-                    raise
+                    raise RequestFailed(url, cause=exc) from exc
                 await asyncio.sleep(self._backoff_delay(attempt))
                 continue
             if response.status_code == 429:
@@ -122,6 +149,8 @@ class Transport:
             if response.status_code >= 500 and attempt < self._retries:
                 await asyncio.sleep(self._backoff_delay(attempt))
                 continue
+            if response.status_code >= 500:
+                raise RequestFailed(str(response.request.url), status_code=response.status_code)
             return response
         raise last_exc if last_exc else RateLimited()  # pragma: no cover - unreachable
 

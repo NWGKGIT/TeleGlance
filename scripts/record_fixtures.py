@@ -28,10 +28,19 @@ drifted from the fixtures — update the selectors (and fixtures) to match.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
 import httpx
+
+from teleglance.parsing import (
+    PageKind,
+    classify_page,
+    default_registry,
+    parse_channel,
+    parse_feed,
+)
 
 HEADERS = {
     "User-Agent": (
@@ -43,15 +52,57 @@ HEADERS = {
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    parser.add_argument("channel", help="public channel username, e.g. telegram")
+    parser.add_argument("channel", nargs="?", help="public channel username, e.g. telegram")
     parser.add_argument("--before", type=int, default=None, help="record an older feed page")
-    parser.add_argument("--msg-id", type=int, default=None, help="also record this message's embed page")
+    parser.add_argument(
+        "--msg-id", type=int, default=None, help="also record this message's embed page"
+    )
+    parser.add_argument(
+        "--embed-latest", action="store_true", help="also record the newest feed message"
+    )
+    parser.add_argument(
+        "--validate",
+        type=Path,
+        nargs="+",
+        default=None,
+        metavar="HTML",
+        help="strictly validate existing feed/embed fixtures instead of recording",
+    )
     parser.add_argument("--out", type=Path, default=Path("tests/fixtures/live"))
     args = parser.parse_args()
 
+    if args.validate:
+        failed = False
+        for target in args.validate:
+            try:
+                html = target.read_text(encoding="utf-8")
+                kind = classify_page(html)
+                if kind == PageKind.CARD:
+                    channel = parse_channel(html, target.stem)
+                    if channel is None:
+                        raise ValueError("profile card metadata could not be parsed")
+                    print(f"OK {target}: profile card for {channel.title!r}")
+                    continue
+                messages = parse_feed(html, default_registry(), strict=True)
+            except Exception as exc:
+                print(f"FAIL {target}: {exc}", file=sys.stderr)
+                failed = True
+                continue
+            if not messages:
+                print(f"FAIL {target}: no messages parsed", file=sys.stderr)
+                failed = True
+            else:
+                print(f"OK {target}: {len(messages)} message(s)")
+        return 1 if failed else 0
+
+    if not args.channel:
+        parser.error("channel is required unless --validate is used")
+    if re.fullmatch(r"[A-Za-z0-9_]+", args.channel) is None:
+        parser.error("channel must be a public username")
+
     args.out.mkdir(parents=True, exist_ok=True)
     with httpx.Client(headers=HEADERS, follow_redirects=True, timeout=20) as client:
-        pages = {
+        pages: dict[str, tuple[str, dict[str, object]]] = {
             f"{args.channel}_feed.html": (f"https://t.me/s/{args.channel}", {}),
             f"{args.channel}_card.html": (f"https://t.me/{args.channel}", {}),
         }
@@ -65,10 +116,28 @@ def main() -> int:
                 f"https://t.me/{args.channel}/{args.msg_id}",
                 {"embed": "1", "mode": "tme"},
             )
+        feed_html = None
         for filename, (url, params) in pages.items():
             response = client.get(url, params=params)
+            response.raise_for_status()
             target = args.out / filename
-            target.write_text(response.text)
+            target.write_text(response.text, encoding="utf-8")
+            print(f"{response.status_code} {response.url} -> {target}")
+            if filename.endswith("_feed.html"):
+                feed_html = response.text
+
+        if args.embed_latest:
+            messages = parse_feed(feed_html or "", default_registry(), strict=True)
+            if not messages:
+                raise RuntimeError("cannot find a message to record as an embed")
+            latest = max(messages, key=lambda message: message.id)
+            response = client.get(
+                f"https://t.me/{args.channel}/{latest.id}",
+                params={"embed": "1", "mode": "tme"},
+            )
+            response.raise_for_status()
+            target = args.out / f"{args.channel}_embed_latest.html"
+            target.write_text(response.text, encoding="utf-8")
             print(f"{response.status_code} {response.url} -> {target}")
     return 0
 

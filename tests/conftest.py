@@ -39,7 +39,11 @@ def msg_html(msg_id: int, text: str = "hi", channel: str = "testchan") -> str:
     <div class="tgme_widget_message_footer compact js-message_footer">
       <div class="tgme_widget_message_info short js-message_info">
         <span class="tgme_widget_message_views">10</span>
-        <span class="tgme_widget_message_meta"><a class="tgme_widget_message_date" href="https://t.me/{channel}/{msg_id}"><time datetime="2026-07-15T10:00:00+00:00" class="time">10:00</time></a></span>
+        <span class="tgme_widget_message_meta">
+          <a class="tgme_widget_message_date" href="https://t.me/{channel}/{msg_id}">
+            <time datetime="2026-07-15T10:00:00+00:00" class="time">10:00</time>
+          </a>
+        </span>
       </div>
     </div>
   </div>

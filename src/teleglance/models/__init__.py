@@ -13,7 +13,7 @@ from .media import (
     Video,
     Voice,
 )
-from .message import Entity, EntityType, ForwardHeader, Message, ReplyHeader
+from .message import Entity, EntityType, ForwardHeader, Message, Reaction, ReplyHeader
 
 __all__ = [
     "Channel",
@@ -29,6 +29,7 @@ __all__ = [
     "Photo",
     "Poll",
     "PollOption",
+    "Reaction",
     "ReplyHeader",
     "RoundVideo",
     "Sticker",

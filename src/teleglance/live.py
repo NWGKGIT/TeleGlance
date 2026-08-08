@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 
 import httpx
 
-from .errors import ParseError, RateLimited
+from .errors import ParseError, RateLimited, RequestFailed
 from .models import Message
 
 if TYPE_CHECKING:
@@ -36,6 +36,10 @@ async def watch(
     since_id — only yield messages with a bigger id; defaults to the newest
     message at the time the watcher starts (i.e. only future posts).
     """
+    if interval < 0:
+        raise ValueError("interval must be non-negative")
+    if since_id is not None and since_id < 0:
+        raise ValueError("since_id must be non-negative")
     if since_id is None:
         page = await client.get_messages(channel)
         since_id = max((m.id for m in page), default=0)
@@ -43,11 +47,12 @@ async def watch(
     while True:
         await asyncio.sleep(interval)
         try:
-            fresh = await client.get_messages(channel, after=since_id)
-        except (RateLimited, ParseError, httpx.TransportError) as exc:
-            logger.warning("watch(%s): poll failed, will retry: %s", channel, exc)
-            continue
-        for message in sorted(fresh, key=lambda m: m.id):
-            if message.id > since_id:
+            async for message in client.iter_new_messages(channel, after=since_id):
                 since_id = message.id
                 yield message
+        except RequestFailed as exc:
+            if exc.status_code is not None and exc.status_code < 500:
+                raise
+            logger.warning("watch(%s): poll failed, will retry: %s", channel, exc)
+        except (RateLimited, ParseError, httpx.TransportError) as exc:
+            logger.warning("watch(%s): poll failed, will retry: %s", channel, exc)

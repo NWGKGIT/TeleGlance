@@ -4,7 +4,7 @@ from teleglance.parsing import PageKind, classify_page, parse_channel
 def test_classify(feed_html, card_html, not_found_html):
     assert classify_page(feed_html) == PageKind.FEED
     assert classify_page(card_html) == PageKind.CARD
-    assert classify_page(not_found_html) == PageKind.UNKNOWN
+    assert classify_page(not_found_html) == PageKind.NOT_FOUND
 
 
 def test_parse_channel_from_feed(feed_html):

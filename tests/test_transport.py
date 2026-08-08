@@ -2,7 +2,7 @@ import httpx
 import pytest
 import respx
 
-from teleglance.errors import RateLimited
+from teleglance.errors import RateLimited, RequestFailed
 from teleglance.transport import Transport
 
 
@@ -28,8 +28,9 @@ async def test_retries_on_5xx_then_succeeds():
 async def test_gives_up_after_retries_on_5xx():
     respx.get("https://t.me/s/x").mock(return_value=httpx.Response(503))
     transport = fast_transport(retries=1)
-    response = await transport.get("https://t.me/s/x")
-    assert response.status_code == 503  # final attempt's response is returned
+    with pytest.raises(RequestFailed) as excinfo:
+        await transport.get("https://t.me/s/x")
+    assert excinfo.value.status_code == 503
     await transport.aclose()
 
 
@@ -76,8 +77,9 @@ async def test_transport_error_retried():
 async def test_transport_error_exhausted_raises():
     respx.get("https://t.me/s/x").mock(side_effect=httpx.ConnectError("boom"))
     transport = fast_transport(retries=1)
-    with pytest.raises(httpx.ConnectError):
+    with pytest.raises(RequestFailed) as excinfo:
         await transport.get("https://t.me/s/x")
+    assert isinstance(excinfo.value.cause, httpx.ConnectError)
     await transport.aclose()
 
 
@@ -116,3 +118,27 @@ async def test_default_headers_and_overrides():
     assert "Mozilla" in request.headers["User-Agent"]
     assert request.headers["X-Custom"] == "1"
     await transport.aclose()
+
+
+def test_retry_after_http_date():
+    request = httpx.Request("GET", "https://t.me/s/x")
+    response = httpx.Response(
+        429,
+        headers={"Retry-After": "Wed, 31 Dec 2098 23:59:59 GMT"},
+        request=request,
+    )
+    assert Transport._retry_after(response) > 1
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"rate_limit": -1},
+        {"retries": -1},
+        {"timeout": 0},
+        {"backoff_base": -1},
+    ],
+)
+def test_invalid_transport_configuration(kwargs):
+    with pytest.raises(ValueError):
+        Transport(**kwargs)

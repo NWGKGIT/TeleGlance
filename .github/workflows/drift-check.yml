@@ -1,0 +1,23 @@
+name: Live markup drift check
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+      - run: uv sync --all-extras --group dev
+      - run: uv run scripts/record_fixtures.py telegram --embed-latest --out /tmp/teleglance-live
+      - run: uv run scripts/record_fixtures.py --validate /tmp/teleglance-live/*.html
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: live-markup
+          path: /tmp/teleglance-live

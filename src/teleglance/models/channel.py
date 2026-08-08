@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ChannelCounts(BaseModel):
@@ -17,7 +17,7 @@ class ChannelCounts(BaseModel):
     videos: int | None = None
     files: int | None = None
     links: int | None = None
-    raw: dict[str, str] = {}
+    raw: dict[str, str] = Field(default_factory=dict)
 
 
 class Channel(BaseModel):
@@ -27,4 +27,4 @@ class Channel(BaseModel):
     description: str | None = None
     description_html: str | None = None
     avatar_url: str | None = None
-    counts: ChannelCounts = ChannelCounts()
+    counts: ChannelCounts = Field(default_factory=ChannelCounts)

@@ -19,7 +19,8 @@ class PageKind:
 
     FEED = "feed"  # /s/ preview with channel info (may have zero messages)
     CARD = "card"  # plain t.me/<name> profile card (no public preview from /s/)
-    UNKNOWN = "unknown"  # neither — treat as not found
+    NOT_FOUND = "not_found"
+    UNKNOWN = "unknown"  # neither — likely markup drift or an interception page
 
 
 def classify_page(html: str, selectors: Selectors | None = None) -> str:
@@ -29,6 +30,8 @@ def classify_page(html: str, selectors: Selectors | None = None) -> str:
         return PageKind.FEED
     if tree.css_first(sel.card_title) is not None:
         return PageKind.CARD
+    if tree.css_first(sel.not_found) is not None:
+        return PageKind.NOT_FOUND
     return PageKind.UNKNOWN
 
 

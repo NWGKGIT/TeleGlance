@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 import pytest
 
+from teleglance import ParseError
 from teleglance.models import (
     DocumentRef,
     LinkPreview,
@@ -143,6 +144,8 @@ def test_reply_and_location(messages):
     (location,) = [x for x in m.media if isinstance(x, Location)]
     assert location.url == "https://maps.google.com/maps?q=48.85,2.35"
     assert location.image_url == "https://cdn4.telesco.pe/file/map110.jpg"
+    assert location.latitude == 48.85
+    assert location.longitude == 2.35
     assert m.text == "We are here"
 
 
@@ -152,3 +155,37 @@ def test_serialization_roundtrip(messages):
     for m in messages.values():
         again = Message.model_validate_json(m.model_dump_json())
         assert again == m
+
+
+def test_reactions_comments_and_edited_metadata():
+    html = """
+    <div class="tgme_widget_message" data-post="testchan/200">
+      <span class="tgme_widget_message_edited">edited</span>
+      <div class="tgme_widget_message_reactions">
+        <span class="tgme_widget_message_reaction">
+          <i class="emoji">👍</i><span class="counter">1.2K</span>
+        </span>
+        <span class="tgme_widget_message_reaction">
+          <tg-emoji emoji-id="custom-1">🔥</tg-emoji>
+          <span class="counter">9</span>
+        </span>
+      </div>
+      <a class="tgme_widget_message_replies">34 comments</a>
+    </div>
+    """
+    (message,) = parse_feed(html, default_registry())
+    assert message.edited is True
+    assert [(reaction.emoji, reaction.count) for reaction in message.reactions] == [
+        ("👍", 1200),
+        ("🔥", 9),
+    ]
+    assert message.reactions[1].custom_emoji_id == "custom-1"
+    assert message.comments == 34
+    assert message.comments_str == "34 comments"
+
+
+def test_strict_feed_detects_unaddressable_message():
+    html = '<div class="tgme_widget_message"><p>drifted</p></div>'
+    assert parse_feed(html, default_registry()) == []
+    with pytest.raises(ParseError):
+        parse_feed(html, default_registry(), strict=True)

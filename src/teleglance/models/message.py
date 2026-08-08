@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .media import Media
 
@@ -49,6 +49,13 @@ class ReplyHeader(BaseModel):
     msg_id: int | None = None
 
 
+class Reaction(BaseModel):
+    emoji: str
+    count: int | None = None
+    count_str: str | None = None
+    custom_emoji_id: str | None = None
+
+
 class Message(BaseModel):
     id: int
     channel: str
@@ -60,8 +67,12 @@ class Message(BaseModel):
     text: str = ""
     html: str | None = None  # original inner HTML of the text block
     markdown: str | None = None  # lossy Telegram-flavored markdown rendering
-    entities: list[Entity] = []
-    media: list[Media] = []
+    entities: list[Entity] = Field(default_factory=list)
+    media: list[Media] = Field(default_factory=list)
     forwarded_from: ForwardHeader | None = None
     reply_to: ReplyHeader | None = None
+    edited: bool = False
+    reactions: list[Reaction] = Field(default_factory=list)
+    comments: int | None = None
+    comments_str: str | None = None
     raw_html: str = ""  # full outer HTML of the message node, for anything not parsed

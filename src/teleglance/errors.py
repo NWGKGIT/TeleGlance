@@ -7,6 +7,14 @@ class TeleGlanceError(Exception):
     """Base class for all teleglance errors."""
 
 
+class InvalidChannel(TeleGlanceError, ValueError):
+    """A channel reference could not be normalized to a public username."""
+
+    def __init__(self, channel: str) -> None:
+        self.channel = channel
+        super().__init__(f"Invalid public channel reference: {channel!r}")
+
+
 class ChannelNotFound(TeleGlanceError):
     """The username does not exist on Telegram."""
 
@@ -41,9 +49,35 @@ class RateLimited(TeleGlanceError):
         super().__init__(f"Rate limited by t.me{hint}")
 
 
+class RequestFailed(TeleGlanceError):
+    """An HTTP request failed after retries or returned an unexpected status."""
+
+    def __init__(
+        self,
+        url: str,
+        *,
+        status_code: int | None = None,
+        cause: Exception | None = None,
+    ) -> None:
+        self.url = url
+        self.status_code = status_code
+        self.cause = cause
+        if status_code is not None:
+            detail = f"returned HTTP {status_code}"
+        elif cause is not None:
+            detail = f"failed: {cause}"
+        else:
+            detail = "failed"
+        super().__init__(f"GET {url} {detail}")
+
+
 class ParseError(TeleGlanceError):
     """The page structure was too broken to extract anything from."""
 
 
 class DownloadError(TeleGlanceError):
     """A media object cannot be downloaded (no direct URL, or the fetch failed)."""
+
+
+class CheckpointError(TeleGlanceError):
+    """A checkpoint store could not be read or updated."""

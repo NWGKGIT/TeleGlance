@@ -39,6 +39,11 @@ class Selectors:
     datetime_attr: str = "datetime"
     views: str = ".tgme_widget_message_views"
     author: str = ".tgme_widget_message_from_author"
+    edited: str = ".tgme_widget_message_edited"
+    reaction: str = ".tgme_widget_message_reaction, .tgme_reaction"
+    reaction_emoji: str = ".emoji, tg-emoji"
+    reaction_count: str = ".tgme_widget_message_reaction_count, .tgme_reaction_count, .counter"
+    comments: str = ".tgme_widget_message_replies, .tgme_widget_message_comments"
 
     # -- message text -------------------------------------------------------
     text: str = ".tgme_widget_message_text"
@@ -105,6 +110,7 @@ class Selectors:
     card_description: str = ".tgme_page_description"
     card_extra: str = ".tgme_page_extra"
     card_avatar: str = ".tgme_page_photo_image img, img.tgme_page_photo_image"
+    not_found: str = ".tgme_landing .tl_page"
 
     def replace(self, **overrides: Any) -> Selectors:
         """A copy with the given fields changed."""

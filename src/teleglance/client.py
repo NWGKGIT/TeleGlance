@@ -2,20 +2,31 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import AsyncIterator
 from pathlib import Path
 from types import TracebackType
 from typing import Any
 
-from . import live, media as media_mod
-from .errors import ChannelNotFound, ChannelPrivate, MessageNotFound
+from . import live
+from . import media as media_mod
+from .errors import (
+    ChannelNotFound,
+    ChannelPrivate,
+    InvalidChannel,
+    MessageNotFound,
+    ParseError,
+    RequestFailed,
+)
 from .models import Channel, Message
 from .models.media import Media
 from .parsing import PageKind, classify_page, parse_channel, parse_feed
 from .parsing.message import default_registry
 from .parsing.registry import ParserRegistry
 from .parsing.selectors import DEFAULT_SELECTORS, Selectors
-from .transport import RequestHook, ResponseHook, Transport
+from .transport import RequestHook, ResponseHook, Transport, TransportProtocol
+
+_CHANNEL_RE = re.compile(r"^[A-Za-z0-9_]+$")
 
 
 class TeleGlanceClient:
@@ -42,11 +53,13 @@ class TeleGlanceClient:
         response_hooks: list[ResponseHook] | None = None,
         registry: ParserRegistry | None = None,
         selectors: Selectors | None = None,
-        transport: Transport | None = None,
+        transport: TransportProtocol | None = None,
+        strict_parsing: bool = False,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.selectors = selectors or DEFAULT_SELECTORS
         self.registry = registry or default_registry(self.selectors)
+        self.strict_parsing = strict_parsing
         self._transport = transport or Transport(
             rate_limit=rate_limit,
             retries=retries,
@@ -83,12 +96,25 @@ class TeleGlanceClient:
             value = value.removeprefix(prefix)
         value = value.removeprefix("t.me/").removeprefix("s/")
         value = value.lstrip("@").strip("/")
-        return value.split("/", 1)[0].split("?", 1)[0]
+        value = value.split("/", 1)[0].split("?", 1)[0]
+        if not value or _CHANNEL_RE.fullmatch(value) is None:
+            raise InvalidChannel(channel)
+        return value.lower()
+
+    @staticmethod
+    def _check_status(response: Any) -> None:
+        if response.status_code >= 400:
+            try:
+                url = str(response.request.url)
+            except RuntimeError:
+                url = "<unknown>"
+            raise RequestFailed(url, status_code=response.status_code)
 
     async def _fetch_feed_page(self, channel: str, params: dict[str, Any]) -> str:
         response = await self._transport.get(f"{self.base_url}/s/{channel}", params=params)
         if response.status_code == 404:
             raise ChannelNotFound(channel)
+        self._check_status(response)
         html = response.text
         kind = classify_page(html, self.selectors)
         if kind == PageKind.FEED:
@@ -96,7 +122,9 @@ class TeleGlanceClient:
         if kind == PageKind.CARD:
             # /s/ redirected to the plain profile card: exists, but no preview.
             raise ChannelPrivate(channel)
-        raise ChannelNotFound(channel)
+        if kind == PageKind.NOT_FOUND:
+            raise ChannelNotFound(channel)
+        raise ParseError(f"unrecognized successful page for channel {channel!r}")
 
     # -- channel ------------------------------------------------------------
 
@@ -107,9 +135,12 @@ class TeleGlanceClient:
         response = await self._transport.get(f"{self.base_url}/s/{name}")
         if response.status_code == 404:
             raise ChannelNotFound(name)
+        self._check_status(response)
         parsed = parse_channel(response.text, name, self.selectors)
         if parsed is None:
-            raise ChannelNotFound(name)
+            if classify_page(response.text, self.selectors) == PageKind.NOT_FOUND:
+                raise ChannelNotFound(name)
+            raise ParseError(f"could not parse channel metadata for {name!r}")
         return parsed
 
     # -- messages -----------------------------------------------------------
@@ -128,6 +159,12 @@ class TeleGlanceClient:
         query — server-side text search within the channel.
         """
         name = self.normalize_channel(channel)
+        if before is not None and before <= 0:
+            raise ValueError("before must be positive")
+        if after is not None and after < 0:
+            raise ValueError("after must be non-negative")
+        if before is not None and after is not None:
+            raise ValueError("before and after are mutually exclusive")
         params: dict[str, Any] = {}
         if before is not None:
             params["before"] = before
@@ -136,7 +173,7 @@ class TeleGlanceClient:
         if query is not None:
             params["q"] = query
         html = await self._fetch_feed_page(name, params)
-        return parse_feed(html, self.registry, self.selectors)
+        return parse_feed(html, self.registry, self.selectors, strict=self.strict_parsing)
 
     async def iter_messages(
         self,
@@ -148,6 +185,10 @@ class TeleGlanceClient:
     ) -> AsyncIterator[Message]:
         """Iterate the channel history newest → oldest, paginating
         transparently (Telethon-style)."""
+        if limit is not None and limit < 0:
+            raise ValueError("limit must be non-negative")
+        if limit == 0:
+            return
         yielded = 0
         cursor = before
         while True:
@@ -165,18 +206,66 @@ class TeleGlanceClient:
                     return
             cursor = min(m.id for m in page)
 
+    async def iter_new_messages(
+        self,
+        channel: str,
+        *,
+        after: int,
+        limit: int | None = None,
+    ) -> AsyncIterator[Message]:
+        """Iterate messages newer than ``after`` oldest → newest.
+
+        The endpoint is drained page by page so callers do not lose ordinary
+        bursts that span more than one preview page.
+        """
+        if after < 0:
+            raise ValueError("after must be non-negative")
+        if limit is not None and limit < 0:
+            raise ValueError("limit must be non-negative")
+        if limit == 0:
+            return
+        cursor = after
+        yielded = 0
+        while True:
+            page = await self.get_messages(channel, after=cursor)
+            fresh = sorted((m for m in page if m.id > cursor), key=lambda m: m.id)
+            if not fresh:
+                return
+            for message in fresh:
+                yield message
+                yielded += 1
+                if limit is not None and yielded >= limit:
+                    return
+            next_cursor = max(m.id for m in fresh)
+            if next_cursor <= cursor:
+                return
+            cursor = next_cursor
+
     async def get_message(self, channel: str, msg_id: int) -> Message:
         """A single message, via the t.me embed endpoint."""
         name = self.normalize_channel(channel)
+        if msg_id <= 0:
+            raise ValueError("msg_id must be positive")
         response = await self._transport.get(
             f"{self.base_url}/{name}/{msg_id}", params={"embed": "1", "mode": "tme"}
         )
         if response.status_code == 404:
             raise MessageNotFound(name, msg_id)
-        messages = parse_feed(response.text, self.registry, self.selectors)
+        self._check_status(response)
+        kind = classify_page(response.text, self.selectors)
+        if kind == PageKind.NOT_FOUND:
+            raise MessageNotFound(name, msg_id)
+        messages = parse_feed(
+            response.text,
+            self.registry,
+            self.selectors,
+            strict=self.strict_parsing,
+        )
         for message in messages:
             if message.id == msg_id:
                 return message
+        if kind == PageKind.UNKNOWN:
+            raise ParseError(f"unrecognized successful embed page for {name!r}/{msg_id}")
         raise MessageNotFound(name, msg_id)
 
     def search(
@@ -205,9 +294,18 @@ class TeleGlanceClient:
         dest: str | Path | None = None,
         *,
         filename: str | None = None,
+        overwrite: bool = False,
+        max_bytes: int | None = None,
     ) -> Path:
         """Download a media attachment (or raw URL) to disk; returns the path."""
-        return await media_mod.download_media(self._transport, media, dest, filename=filename)
+        return await media_mod.download_media(
+            self._transport,
+            media,
+            dest,
+            filename=filename,
+            overwrite=overwrite,
+            max_bytes=max_bytes,
+        )
 
-    async def download_bytes(self, media: Media | str) -> bytes:
-        return await media_mod.download_bytes(self._transport, media)
+    async def download_bytes(self, media: Media | str, *, max_bytes: int | None = None) -> bytes:
+        return await media_mod.download_bytes(self._transport, media, max_bytes=max_bytes)
