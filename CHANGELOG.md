@@ -2,7 +2,7 @@
 
 All notable changes to TeleGlance are documented here.
 
-## 0.2.0 - 2026-07-26
+## 0.1.0 - 2026-08-13
 
 ### Added
 

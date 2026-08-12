@@ -4,16 +4,17 @@ build-backend = "hatchling.build"
 
 [project]
 name = "teleglance"
-version = "0.2.0"
-description = "Async client for public Telegram channels via t.me web previews — no API keys, no MTProto"
+version = "0.1.0"
+description = "Async client for public Telegram channels via t.me web previews with no API keys or MTProto API"
 readme = "README.md"
-license = "MIT"
+license = { text = "MIT" }
 requires-python = ">=3.10"
-authors = [{ name = "Nahom W" }]
+authors = [{ name = "Nahom W.G" }]
 keywords = ["telegram", "t.me", "channels", "scraper", "async", "preview"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -66,7 +67,7 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
-source = ["teleglance"]
+source = ["src/teleglance"]
 
 [tool.coverage.report]
 fail_under = 90

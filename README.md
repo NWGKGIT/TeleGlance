@@ -1,178 +1,269 @@
 # TeleGlance
 
-Async Python client for **public Telegram channels** built entirely on **t.me web previews** — no API keys, no MTProto, no account. Telethon-flavored ergonomics over `t.me/s/<channel>`.
+Async Python client for public Telegram channels built entirely on t.me web previews. No API keys, no MTProto, no user account required.
+
+---
+
+## Overview
+
+TeleGlance is an async Python client for accessing public Telegram channels without Telegram API credentials. By using public t.me web previews instead of the MTProto protocol, it allows applications to collect public channel data instantly without authentication.
+
+### What TeleGlance Provides
+* Public channel metadata
+* Message history and pagination
+* Channel search
+* Live polling
+* Media downloading
+* Resumable checkpoints
+* SOCKS proxy support
+* Request and response hooks
+* CLI access
+
+---
+
+## Why TeleGlance?
+
+TeleGlance is not a replacement for Telethon. It provides a deliberately smaller interface for applications that only need publicly accessible channel data and do not want Telegram API credentials or an MTProto session.
+
+| Capability | TeleGlance | Telethon |
+| :--- | :--- | :--- |
+| Telegram API credentials | No | Yes |
+| MTProto | No | Yes |
+| Public channels | Yes | Yes |
+| Private channels | No | Yes |
+| Full Telegram API | No | Yes |
+| Web-preview based | Yes | No |
+| Account/session required | No | Generally |
+| Sending/interacting | No | Yes |
+
+---
+
+## What TeleGlance Can and Cannot Do
+
+* **Can Do**: Retrieve public posts, titles, descriptions, participant counts, photos, videos, voice notes, stickers, and search results. It supports connection pooling, retries, and checkpointing.
+* **Cannot Do**: Access private channels, send messages, authenticate as a user, join chat sessions, retrieve deep history beyond the web preview limit, or download document attachments (Telegram does not expose document download URLs on web previews).
+
+---
+
+## Installation
+
+Install using pip:
+
+```bash
+pip install teleglance
+```
+
+Or using uv:
+
+```bash
+uv add teleglance
+```
+
+### Extras
+* **CLI Utility**: `pip install "teleglance[cli]"` or `uv add "teleglance[cli]"`
+* **SOCKS Proxy Support**: `pip install "teleglance[socks]"` or `uv add "teleglance[socks]"`
+
+Supports Python 3.10 through 3.14. Refer to the complete installation documentation at [DOCS_URL_PLACEHOLDER] for configuration options.
+
+---
+
+## Quick Start
+
+The following example demonstrates how to retrieve metadata and iterate recent posts from the example channel, `nahomssandbox`:
 
 ```python
 import asyncio
 from teleglance import TeleGlanceClient
 
-
 async def main():
     async with TeleGlanceClient() as client:
-        channel = await client.get_channel("telegram")
-        print(channel.title, channel.counts.subscribers)
+        # Fetch channel metadata
+        channel = await client.get_channel("nahomssandbox")
+        print(f"Title: {channel.title}")
+        print(f"Subscribers count: {channel.counts.subscribers}")
 
-        async for message in client.iter_messages("telegram", limit=50):
-            print(message.id, message.date, message.views, message.text[:80])
-
+        # Iterate the last 10 messages
+        async for message in client.iter_messages("nahomssandbox", limit=10):
+            print(f"[{message.id}] ({message.date}): {message.text[:80]}")
 
 asyncio.run(main())
 ```
 
-## Install
+### Returned Objects
+* `get_channel` returns a `Channel` model containing titles, descriptions, avatars, and counts.
+* `iter_messages` yields `Message` models containing text, timestamps, views, entities, and attached media lists.
 
-```bash
-uv add teleglance            # library
-uv add "teleglance[cli]"     # + the `teleglance` command
-uv add "teleglance[socks]"   # + SOCKS proxy support
+---
+
+## API Overview
+
+```text
+TeleGlanceClient
+├── get_channel()       Channel metadata
+├── get_message()       Individual messages
+├── iter_messages()     Historical messages
+├── search()            Channel search
+├── watch()             New-message polling
+├── download_media()    Save media to disk
+└── download_bytes()    Download media to memory
 ```
 
-TeleGlance supports Python 3.10 through 3.14.
+For the exhaustive API reference, check the complete documentation site at [DOCS_URL_PLACEHOLDER].
 
-## Features
+---
 
-- **History** — `get_messages()` (one page), `iter_messages()` (transparent pagination, newest → oldest, `limit=`/`before=`)
-- **Single message** — `get_message(channel, id)` via the t.me embed endpoint
-- **Search** — `search(channel, query)` using t.me's server-side `?q=`
-- **Live** — `watch(channel, interval=30)` async-iterates new posts as they appear
-- **Resumable** — explicit history/live cursors plus atomic JSON checkpoints
-- **Channel metadata** — title, description, avatar, subscriber/photo/video/file/link counts
-- **Rich messages** — plain text, original HTML, lossy markdown, typed entities (bold/italic/links/mentions/hashtags/spoilers/code/emoji), forward/reply headers, reactions, comments, edit state, and view counts
-- **Media** — photos, videos, round videos, voice notes, stickers, polls, link previews, locations, documents; `download_media()` / `download_bytes()` for anything with a direct URL
-- **Polite by default** — request throttling (1 req/s), exponential backoff with `Retry-After` handling, typed `RateLimited`
-- **Pluggable** — pydantic v2 models (`.model_dump_json()` everywhere), httpx `request_hooks`/`response_hooks`, proxy support, and a parser registry for extending without forking
+## Examples
+
+### Channel Metadata
+Retrieve metadata details for the example channel:
+```python
+channel = await client.get_channel("nahomssandbox")
+print(channel.title, channel.description)
+```
+
+### Message History
+Paginate through past message history using the `before` cursor:
+```python
+async for message in client.iter_messages("nahomssandbox", limit=5, before=1060):
+    print(message.id, message.text)
+```
+
+### Single Message
+Lookup a single post by its unique ID:
+```python
+message = await client.get_message("nahomssandbox", 1061)
+print(message.text)
+```
+
+### Search
+Perform text queries within a channel's history:
+```python
+async for message in client.search("nahomssandbox", "react", limit=5):
+    print(message.id, message.text)
+```
+
+### Live Monitoring
+Poll for new posts. This runs in near-real-time using polling, not push updates.
+```python
+async for message in client.watch("nahomssandbox", interval=10.0):
+    print(f"New post: {message.text}")
+```
+*Note: Transient errors are logged as warnings and retried, while fatal errors (e.g. channel private) bubble up.*
+
+### Media
+Save attachments to disk or download them in-memory:
+```python
+# Save to disk
+path = await client.download_media(message.media[0], dest="./downloads")
+
+# In-memory download
+data = await client.download_bytes(message.media[0])
+```
+*Note: Document downloads are not supported on web previews. Check the media guides at [DOCS_URL_PLACEHOLDER] for details.*
+
+### Resumable Collection
+Perform history collection with checkpoint states:
+```python
+store = JsonCheckpointStore("state.json")
+state = await store.load("history:nahomssandbox") or MessageCheckpoint(channel="nahomssandbox")
+
+async for message in client.iter_messages("nahomssandbox", before=state.oldest_id):
+    await process(message)
+    state = state.record(message)
+    await store.save("history:nahomssandbox", state)
+```
+
+---
+
+## Data Model
+
+* **`Channel`**: Channel information (title, description, raw counters).
+* **`Message`**: Post metadata (ID, date, text, views, list of media).
+* **`Media`**: Photo, Video, Sticker, Poll, and Location structures.
+* **`MessageCheckpoint` / `JsonCheckpointStore`**: Resumable scraper state structures.
+
+---
+
+## Limitations
+
+* **Public Channels Only**: Private channels raise `ChannelPrivate`.
+* **Approximate Counters**: View and subscriber numbers are strings (e.g., `1.2K`).
+* **History Depth**: Telegram caps web preview depth to recent posts (usually ~100 to ~2,000).
+* **Media Limits**: Documents cannot be downloaded.
+* **Markup Dependencies**: Changes in Telegram's web preview layout may impact parsing accuracy.
+
+---
+
+## Architecture
+
+TeleGlance splits network transport and data presentation into two components:
+1. **`TeleGlanceClient`**: Normalizes inputs, runs the parsers, and handles paginators.
+2. **`Transport`**: Manages HTTP connections, throttling (polite request pacing), retries, proxies, and observability event hooks.
+
+```
+       +---------------------------------------------+
+       |             TeleGlanceClient                |
+       +---------------------------------------------+
+                              |
+                              v
+       +---------------------------------------------+
+       |                 Transport                   |
+       +---------------------------------------------+
+```
+
+---
+
+## Markup Resilience
+
+If Telegram alters its CSS structure, overrides can be supplied dynamically without updating the library:
+1. **Selector Overrides**: Replace specific CSS classes at runtime.
+2. **Parser Registry**: Map custom parser routines to new element structures.
+3. **Raw HTML Fallback**: Each message preserves its original markup under `Message.raw_html`.
+
+---
 
 ## CLI
 
 ```bash
-teleglance channel telegram                     # metadata as JSON
-teleglance messages telegram --limit 50 --ndjson | jq .text
-teleglance messages telegram --after 4800 --ndjson --checkpoint state.json
-teleglance search telegram "premium" --limit 10
-teleglance watch telegram --interval 20 --checkpoint state.json
-teleglance download telegram 4820 -o downloads/
+# Get channel metadata
+teleglance channel nahomssandbox
+
+# Retrieve recent messages in NDJSON format
+teleglance messages nahomssandbox --limit 10 --ndjson
+
+# Download media files from a post
+teleglance download nahomssandbox 1062 -o downloads/
 ```
 
-Collection commands emit one valid JSON array by default. Use `--ndjson` for
-streaming or resumable collection. Checkpoints are saved only after each record
-has been written and flushed, giving at-least-once delivery: after a crash the
-last record may repeat, but it is not silently skipped. Consumers should
-deduplicate on `(channel, id)`.
+See the CLI guides at [DOCS_URL_PLACEHOLDER] for options.
 
-The same behavior is available to library consumers without coupling message
-processing to storage:
-
-```python
-from teleglance import JsonCheckpointStore, MessageCheckpoint, TeleGlanceClient
-
-store = JsonCheckpointStore("state.json")
-state = await store.load("history:telegram") or MessageCheckpoint(channel="telegram")
-
-async with TeleGlanceClient() as client:
-    async for message in client.iter_messages("telegram", before=state.oldest_id):
-        await process(message)
-        state = state.record(message)  # acknowledge only after processing
-        await store.save("history:telegram", state)
-```
-
-For forward collection, pass `state.newest_id or 0` to
-`iter_new_messages(..., after=...)`. Checkpoint stores are a protocol, so an
-application can substitute Redis or a database without changing collection
-logic. The included JSON store is intended for a single writer.
-
-## Built for markup drift
-
-Telegram can change the preview markup at any time, so adapting must never
-require re-architecting. Three layers, cheapest first:
-
-**1. Selectors — every structural assumption in one place.** No parser
-hard-codes a t.me class name; they all read from a `Selectors` object
-(`src/teleglance/parsing/selectors.py`). If Telegram renames a class, fix it
-at runtime without waiting for a release:
-
-```python
-from teleglance import DEFAULT_SELECTORS, TeleGlanceClient
-
-selectors = DEFAULT_SELECTORS.replace(views=".tgme_widget_message_view_count")
-client = TeleGlanceClient(selectors=selectors)
-```
-
-or load overrides from config, so selector fixes ship as data:
-
-```python
-from teleglance import Selectors
-
-selectors = Selectors.from_dict(json.load(open("selectors.json")))  # typos raise
-```
-
-As maintainer, the permanent fix is editing the defaults in `selectors.py` —
-one file, no logic changes.
-
-**2. Parser registry — for new block types.** Media blocks are parsed by a
-registry you can amend when Telegram ships something the library doesn't know
-yet:
-
-```python
-from teleglance import TeleGlanceClient, Unsupported, default_registry
-
-registry = default_registry()
-
-
-def parse_gift(message_node):
-    block = message_node.css_first(".tgme_widget_message_gift")
-    return [Unsupported(raw_html=block.html)] if block else []
-
-
-registry.register("gift", parse_gift)
-client = TeleGlanceClient(registry=registry)
-```
-
-A parser that raises is logged and skipped — markup drift in one block type
-never breaks the rest of the message.
-
-**3. `raw_html` — the safety net.** Every `Message` keeps the full original
-HTML of its node, so nothing the parsers miss is ever lost; you can always
-post-process what a drifted selector failed to extract.
-
-Set `TeleGlanceClient(strict_parsing=True)` when silent degradation is not
-acceptable. A recognized feed containing message containers but no valid post
-IDs then raises `ParseError`; genuinely empty feeds remain valid.
-
-When drift happens: record the live page (`uv run scripts/record_fixtures.py
-<channel>`), diff it against `tests/fixtures/`, adjust `selectors.py`, update
-the fixture, and the test suite validates the fix offline.
-
-## Will Telegram block this?
-
-t.me previews are deliberately public: server-rendered static HTML, no
-JavaScript challenge, no Cloudflare, no login. Enforcement is soft, IP-based
-rate limiting that only bites at high volume (thousands of requests). The
-defaults here — 1 req/s throttling, browser-like headers, backoff honoring
-`Retry-After`, and proxy support for scale — stay comfortably under it, so a
-headless browser is unnecessary weight. If Telegram ever hardens the
-endpoint, the fetching side is an isolated seam: parsers consume plain HTML
-strings, and `TeleGlanceClient(transport=...)` accepts any object with the
-`Transport` interface, so a browser-based fetcher (Playwright etc.) could be
-dropped in without touching a single parser.
-
-## Limitations (inherent to web previews)
-
-- Public channels only; private channels raise `ChannelPrivate`.
-- Feed pages hold ~20 messages; deep history means many requests — keep the rate limit polite.
-- Documents expose title/size but **no direct download URL**.
-- View counts and subscriber counts are the display values ("1.2K") — parsed integers are approximate; the raw strings are always kept.
-- History depth via previews is capped by Telegram (reports range from ~100 to ~2000 messages per channel depending on the channel); deeper archives need account-based access, which is out of scope by design.
-- Checkpointed delivery is at least once and JSON checkpoint files support one writer; deduplicate downstream by `(channel, id)`.
-- Telegram can change the preview markup at any time. Parsers degrade gracefully (fields become `None`, unknown blocks are skipped, `raw_html` survives) — see [Built for markup drift](#built-for-markup-drift) for how to adapt.
+---
 
 ## Development
 
+Execute tests and code style checks:
+
 ```bash
 uv sync --all-extras --group dev
+
 uv run ruff check .
 uv run ruff format --check .
 uv run mypy
+
 uv run pytest --cov
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for fixture and live-drift workflows.
+Refer to the development guides at [DOCS_URL_PLACEHOLDER] for fixture recording instructions.
+
+---
+
+## Documentation
+
+The complete documentation, including full guides and API reference, is available at:
+[DOCS_URL_PLACEHOLDER]
+
+---
+
+## License
+
+This project is licensed under the MIT License.
