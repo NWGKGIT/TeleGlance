@@ -27,11 +27,18 @@ def resolve_url(media: Media | str) -> str:
 
 
 def _filename_for(url: str, content_type: str | None) -> str:
-    name = Path(urlparse(url).path).name
-    if name and "." in name:
-        return name
-    ext = mimetypes.guess_extension((content_type or "").split(";")[0].strip()) or ".bin"
-    return (name or "media") + ext
+    path_name = Path(urlparse(url).path).name
+    if path_name and "." in path_name:
+        name = path_name
+    else:
+        ext = mimetypes.guess_extension((content_type or "").split(";")[0].strip()) or ".bin"
+        name = (path_name or "media") + ext
+
+    if len(name) > 200:
+        suffix = Path(name).suffix
+        stem_limit = 200 - len(suffix)
+        name = Path(name).stem[:stem_limit] + suffix
+    return name
 
 
 def _validate_max_bytes(max_bytes: int | None) -> None:
