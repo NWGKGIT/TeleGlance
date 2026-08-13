@@ -1,0 +1,43 @@
+---
+title: TeleGlance
+---
+
+<Hero />
+
+```python
+import asyncio
+from teleglance import TeleGlanceClient
+
+async def main():
+    async with TeleGlanceClient() as client:
+        channel = await client.get_channel("nahomssandbox")
+        print(channel.title, channel.counts.subscribers)
+
+        async for message in client.iter_messages("nahomssandbox", limit=10):
+            print(message.id, message.date, message.text[:80])
+
+asyncio.run(main())
+```
+
+<Features />
+
+## Why TeleGlance?
+
+TeleGlance is not a replacement for Telethon. It is for applications that only need public channel data and do not want API credentials or an MTProto session.
+
+| Capability | TeleGlance | Telethon |
+| :--- | :---: | :---: |
+| Telegram API credentials | No | Yes |
+| MTProto | No | Yes |
+| Public channels | Yes | Yes |
+| Private channels | No | Yes |
+| Sending messages | No | Yes |
+| Account/session required | No | Generally |
+
+## What it cannot do
+
+- Access private channels or groups
+- Send messages or interact with chats
+- Download document attachments (no direct URL in web previews)
+- Guarantee complete channel history (Telegram caps preview depth)
+- Replace a full Telegram API client

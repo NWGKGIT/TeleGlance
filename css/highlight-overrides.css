@@ -1,0 +1,70 @@
+/* ============================================================
+   highlight.js — Classic documentation / Sphinx-style theme
+   ============================================================ */
+
+.language-python .hljs-keyword {
+   color: #7a3e3e;
+   font-weight: 600;
+}
+
+.language-python .hljs-built_in {
+   color: #8a5a14;
+}
+
+.language-python .hljs-string {
+   color: #356a3a;
+}
+
+.language-python .hljs-number {
+   color: #765c9a;
+}
+
+.language-python .hljs-title.function_ {
+   color: #245b7a;
+   font-weight: 600;
+}
+
+.language-python .hljs-title.class_ {
+   color: #245b7a;
+   font-weight: 600;
+}
+
+.language-python .hljs-decorator {
+   color: #765c9a;
+}
+
+.language-python .hljs-comment {
+   color: #6a737d;
+   font-style: italic;
+}
+
+.language-python .hljs-params {
+   color: #333333;
+}
+
+.language-python .hljs-self {
+   color: #555555;
+}
+
+.language-python .hljs-variable {
+   color: #555555;
+}
+
+.language-python .hljs-attr {
+   color: #555555;
+}
+
+.language-python .hljs-literal {
+   color: #765c9a;
+}
+
+.language-python .hljs-operator {
+   color: #555555;
+}
+
+/* Import statements */
+
+.language-python .hljs-import {
+   color: #7a3e3e;
+   font-weight: 600;
+}

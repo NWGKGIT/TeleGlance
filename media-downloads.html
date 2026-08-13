@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Media Downloads — TeleGlance</title>
+  <meta name="description"
+    content="Download photos, videos, stickers, and voice notes from Telegram posts to disk or into memory using TeleGlance." />
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232980b9'/><text y='.9em' font-size='80' x='10'></text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/highlight-overrides.css" />
+</head>
+
+<body>
+
+  <header class="topbar" role="banner">
+    <button class="hamburger" id="hamburger" aria-label="Toggle sidebar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="18" x2="21" y2="18" />
+      </svg>
+    </button>
+    <a href="index.html" class="topbar-logo">TeleGlance</a>
+    <span class="topbar-version">v0.1.0</span>
+    <div class="topbar-spacer"></div>
+    <nav class="topbar-links" aria-label="Top navigation">
+      <a href="getting-started.html" class="topbar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+        </svg><span>Docs</span></a>
+      <a href="api-reference.html" class="topbar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 18 22 12 16 6" />
+          <polyline points="8 6 2 12 8 18" />
+        </svg><span>API</span></a>
+      <a href="https://github.com/NWGKGIT/TeleGlance" class="topbar-github" target="_blank" rel="noopener"
+        aria-label="GitHub"><svg viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z" />
+        </svg></a>
+      <div class="topbar-pip"><span class="dollar">$</span><span class="pip-cmd">pip install teleglance</span></div>
+    </nav>
+  </header>
+
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="page-wrapper">
+    <aside class="sidebar" id="sidebar" aria-label="Documentation navigation">
+      <nav>
+        <span class="sidebar-label">Overview</span>
+        <ul class="sidebar-nav">
+          <li><a href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>Home</a></li>
+        </ul>
+        <span class="sidebar-label">Guides</span>
+        <ul class="sidebar-nav">
+          <li><a href="getting-started.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polygon points="10 8 16 12 10 16 10 8" />
+              </svg>Getting Started</a></li>
+          <li><a href="checkpoints.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+                <path d="m9 12 2 2 4-4" />
+              </svg>Checkpoints &amp; Resumability</a></li>
+          <li><a href="media-downloads.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>Media Downloads</a></li>
+          <li><a href="advanced-customization.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+              </svg>Advanced Customization</a></li>
+        </ul>
+        <span class="sidebar-label">Reference</span>
+        <ul class="sidebar-nav">
+          <li><a href="api-reference.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 18 22 12 16 6" />
+                <polyline points="8 6 2 12 8 18" />
+              </svg>API Reference</a></li>
+        </ul>
+        <span class="sidebar-label">Project</span>
+        <ul class="sidebar-nav">
+          <li><a href="https://github.com/NWGKGIT/TeleGlance" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"
+                fill="currentColor">
+                <path
+                  d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z" />
+              </svg>GitHub</a></li>
+          <li><a href="https://github.com/NWGKGIT/TeleGlance/blob/main/CHANGELOG.md" target="_blank" rel="noopener"><svg
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>Changelog</a></li>
+          <li><a href="https://pypi.org/project/teleglance/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+              </svg>PyPI</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main class="main-content" id="main">
+      <div class="content-body">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="index.html">Home</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+          <span>Media Downloads</span>
+        </nav>
+
+        <article class="prose">
+          <h1>Media Downloads</h1>
+          <p class="subtitle">TeleGlance allows you to download files and assets attached to Telegram posts.</p>
+
+          <hr />
+
+          <h2 id="download-methods">Download Methods</h2>
+          <p>You can download media using two client methods:</p>
+          <ul>
+            <li><code>download_media</code> — Save media directly to your filesystem. Returns the saved
+              <code>Path</code>.
+            </li>
+            <li><code>download_bytes</code> — Retrieve the media content directly in-memory as a <code>bytes</code>
+              object.</li>
+          </ul>
+
+          <hr />
+
+          <h2 id="code-example">Code Example</h2>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">Python</span>
+              <button class="copy-btn" aria-label="Copy code"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>Copy</button>
+            </div>
+            <pre><code class="language-python">import asyncio
+from teleglance import TeleGlanceClient
+
+
+async def main():
+    async with TeleGlanceClient() as client:
+        async for message in client.iter_messages("nahomssandbox", limit=10):
+            # Check if post contains attachments
+            for media in message.media:
+                if media.type == "photo":
+                    # Download photo to local ./downloads folder
+                    saved_path = await client.download_media(media, dest="./downloads")
+                    print(f"Photo saved: {saved_path}")
+
+                elif media.type == "sticker":
+                    # Retrieve sticker bytes directly
+                    image_bytes = await client.download_bytes(media)
+                    print(f"Sticker downloaded. Size: {len(image_bytes)} bytes")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())</code></pre>
+          </div>
+
+          <hr />
+
+          <h2 id="filename-handling">Filename Handling &amp; File Length Limits</h2>
+          <p>
+            Telegram CDN URLs contain long hashes as file identifiers. These can produce filenames that exceed
+            typical OS limits (usually 255 characters).
+          </p>
+          <ul>
+            <li>
+              <strong>Automatic Truncation</strong>: TeleGlance truncates generated filenames to a maximum of
+              <strong>200 characters</strong> to ensure that temporary file operations (which add prefixes or
+              suffixes) do not cause filesystem errors.
+            </li>
+            <li>
+              <strong>Custom Naming</strong>: If you want to use a specific name, pass a <code>filename</code>
+              argument to <code>download_media</code>:
+            </li>
+          </ul>
+
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">Python</span>
+              <button class="copy-btn" aria-label="Copy code"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>Copy</button>
+            </div>
+            <pre><code class="language-python">await client.download_media(photo, dest="./downloads", filename="logo.jpg")</code></pre>
+          </div>
+
+          <hr />
+
+          <h2 id="media-limitations">Important Media Limitations</h2>
+          <p>When working with public Telegram web previews, keep the following limits in mind:</p>
+
+          <div class="callout callout-warning">
+            <div class="callout-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            </div>
+            <div class="callout-content">
+              <div class="callout-title">No Document Downloads</div>
+              Telegram web previews do not include direct URLs for document attachments. You can retrieve document
+              metadata (e.g. filename, title, extra sizes), but calling download methods on a document will raise a
+              <code>DownloadError</code>.
+            </div>
+          </div>
+
+          <div class="callout callout-note">
+            <div class="callout-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+            <div class="callout-content">
+              <div class="callout-title">Missing Video Links</div>
+              Large video files may only expose a <code>thumb_url</code> instead of a full video download
+              <code>url</code>
+              in the web preview HTML structure. In this case <code>download_media</code> will download the thumbnail
+              only.
+            </div>
+          </div>
+
+          <div class="callout callout-note">
+            <div class="callout-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+            <div class="callout-content">
+              <div class="callout-title">Throttled Speed</div>
+              Media downloads use the same HTTP transport layer, so they are subject to client rate-limiting and
+              connection policies. Use SOCKS/HTTP proxies if you need to run high-volume download pipelines.
+            </div>
+          </div>
+        </article>
+
+        <nav class="doc-footer" aria-label="Page navigation">
+          <a href="checkpoints.html" class="footer-prev" id="footer-prev">
+            <span class="nav-label">← Previous</span>
+            <span class="nav-title">Checkpoints &amp; Resumability</span>
+          </a>
+          <a href="advanced-customization.html" class="footer-next" id="footer-next">
+            <span class="nav-label">Next →</span>
+            <span class="nav-title">Advanced Customization</span>
+          </a>
+        </nav>
+      </div>
+
+      <footer class="site-footer">
+        TeleGlance · MIT License ·
+        <a href="https://github.com/NWGKGIT/TeleGlance" target="_blank" rel="noopener">GitHub</a> ·
+        <a href="https://pypi.org/project/teleglance/" target="_blank" rel="noopener">PyPI</a>
+      </footer>
+    </main>
+
+    <aside class="toc-sidebar" aria-label="On this page">
+      <div class="toc-title">On this page</div>
+      <ul class="toc-list" id="toc-list"></ul>
+    </aside>
+  </div>
+
+  <button class="scroll-top" id="scroll-top" aria-label="Scroll to top">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+      stroke-linejoin="round">
+      <polyline points="18 15 12 9 6 15" />
+    </svg>
+  </button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  <script src="js/main.js"></script>
+</body>
+
+</html>

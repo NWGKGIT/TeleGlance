@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Reference — TeleGlance</title>
+  <meta name="description"
+    content="Complete API reference for TeleGlanceClient, data models (Channel, Message, Media), and custom exceptions." />
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232980b9'/><text y='.9em' font-size='80' x='10'></text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/highlight-overrides.css" />
+</head>
+
+<body>
+
+  <header class="topbar" role="banner">
+    <button class="hamburger" id="hamburger" aria-label="Toggle sidebar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="18" x2="21" y2="18" />
+      </svg>
+    </button>
+    <a href="index.html" class="topbar-logo">TeleGlance</a>
+    <span class="topbar-version">v0.1.0</span>
+    <div class="topbar-spacer"></div>
+    <nav class="topbar-links" aria-label="Top navigation">
+      <a href="getting-started.html" class="topbar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+        </svg><span>Docs</span></a>
+      <a href="api-reference.html" class="topbar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 18 22 12 16 6" />
+          <polyline points="8 6 2 12 8 18" />
+        </svg><span>API</span></a>
+      <a href="https://github.com/NWGKGIT/TeleGlance" class="topbar-github" target="_blank" rel="noopener"
+        aria-label="GitHub"><svg viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z" />
+        </svg></a>
+      <div class="topbar-pip"><span class="dollar">$</span><span class="pip-cmd">pip install teleglance</span></div>
+    </nav>
+  </header>
+
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="page-wrapper">
+    <aside class="sidebar" id="sidebar" aria-label="Documentation navigation">
+      <nav>
+        <span class="sidebar-label">Overview</span>
+        <ul class="sidebar-nav">
+          <li><a href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>Home</a></li>
+        </ul>
+        <span class="sidebar-label">Guides</span>
+        <ul class="sidebar-nav">
+          <li><a href="getting-started.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polygon points="10 8 16 12 10 16 10 8" />
+              </svg>Getting Started</a></li>
+          <li><a href="checkpoints.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+                <path d="m9 12 2 2 4-4" />
+              </svg>Checkpoints &amp; Resumability</a></li>
+          <li><a href="media-downloads.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>Media Downloads</a></li>
+          <li><a href="advanced-customization.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+              </svg>Advanced Customization</a></li>
+        </ul>
+        <span class="sidebar-label">Reference</span>
+        <ul class="sidebar-nav">
+          <li><a href="api-reference.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 18 22 12 16 6" />
+                <polyline points="8 6 2 12 8 18" />
+              </svg>API Reference</a></li>
+        </ul>
+        <span class="sidebar-label">Project</span>
+        <ul class="sidebar-nav">
+          <li><a href="https://github.com/NWGKGIT/TeleGlance" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"
+                fill="currentColor">
+                <path
+                  d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z" />
+              </svg>GitHub</a></li>
+          <li><a href="https://github.com/NWGKGIT/TeleGlance/blob/main/CHANGELOG.md" target="_blank" rel="noopener"><svg
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>Changelog</a></li>
+          <li><a href="https://pypi.org/project/teleglance/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+              </svg>PyPI</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main class="main-content" id="main">
+      <div class="content-body">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="index.html">Home</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+          <span>API Reference</span>
+        </nav>
+
+        <article class="prose">
+          <h1>API Reference</h1>
+          <p class="subtitle">Detailed specifications of the classes, client methods, data models, and custom exceptions
+            in TeleGlance.</p>
+
+          <hr />
+
+          <!-- ── TeleGlanceClient ──────────────────────────────────── -->
+          <h2 id="teleglanceclient">TeleGlanceClient</h2>
+          <p>The main client interface for communicating with Telegram web previews.</p>
+
+          <h3 id="constructor">Constructor</h3>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">Python</span>
+              <button class="copy-btn" aria-label="Copy code"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>Copy</button>
+            </div>
+            <pre><code class="language-python">class TeleGlanceClient:
+    def __init__(
+        self,
+        *,
+        base_url: str = "https://t.me",
+        rate_limit: float = 1.0,
+        retries: int = 3,
+        timeout: float = 15.0,
+        proxy: str | None = None,
+        headers: dict[str, str] | None = None,
+        request_hooks: list[RequestHook] | None = None,
+        response_hooks: list[ResponseHook] | None = None,
+        registry: ParserRegistry | None = None,
+        selectors: Selectors | None = None,
+        transport: TransportProtocol | None = None,
+        strict_parsing: bool = False,
+    )</code></pre>
+          </div>
+
+          <div class="table-wrap">
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th>Parameter</th>
+                  <th>Type</th>
+                  <th>Default</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">base_url</td>
+                  <td class="param-type">str</td>
+                  <td class="param-default">"https://t.me"</td>
+                  <td class="param-desc">Target URL for Telegram previews.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">rate_limit</td>
+                  <td class="param-type">float</td>
+                  <td class="param-default">1.0</td>
+                  <td class="param-desc">Maximum requests per second. Set to <code>0</code> to disable throttling.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">retries</td>
+                  <td class="param-type">int</td>
+                  <td class="param-default">3</td>
+                  <td class="param-desc">Number of retry attempts on HTTP failure or 429 status codes.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">timeout</td>
+                  <td class="param-type">float</td>
+                  <td class="param-default">15.0</td>
+                  <td class="param-desc">Request timeout in seconds.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">proxy</td>
+                  <td class="param-type">str | None</td>
+                  <td class="param-default">None</td>
+                  <td class="param-desc">Proxy server URL — HTTP, HTTPS, SOCKS4, or SOCKS5.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">headers</td>
+                  <td class="param-type">dict | None</td>
+                  <td class="param-default">None</td>
+                  <td class="param-desc">Custom headers merged into every request.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">request_hooks</td>
+                  <td class="param-type">list | None</td>
+                  <td class="param-default">None</td>
+                  <td class="param-desc">Callbacks executed before each request is sent.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">response_hooks</td>
+                  <td class="param-type">list | None</td>
+                  <td class="param-default">None</td>
+                  <td class="param-desc">Callbacks executed after each response is received.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">registry</td>
+                  <td class="param-type">ParserRegistry | None</td>
+                  <td class="param-default">None</td>
+                  <td class="param-desc">Registry containing custom parsing functions.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">selectors</td>
+                  <td class="param-type">Selectors | None</td>
+                  <td class="param-default">None</td>
+                  <td class="param-desc">Custom Selectors mapping for HTML extraction.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">transport</td>
+                  <td class="param-type">TransportProtocol | None</td>
+                  <td class="param-default">None</td>
+                  <td class="param-desc">Custom transport layer implementation.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">strict_parsing</td>
+                  <td class="param-type">bool</td>
+                  <td class="param-default">False</td>
+                  <td class="param-desc">When enabled, recognized pages with no posts raise <code>ParseError</code>
+                    instead of returning empty lists.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <hr />
+
+          <!-- ── Async Methods ──────────────────────────────────────── -->
+          <h2 id="async-methods">Async Methods</h2>
+
+          <h3 id="get-channel">get_channel</h3>
+          <p>Retrieve metadata details for a public Telegram channel.</p>
+          <div class="method-sig">
+            <span class="sig-keyword">async def</span> <span class="sig-name">get_channel</span>(<span
+              class="sig-param">self</span>, <span class="sig-param">channel</span>: <span class="sig-type">str</span>)
+            <span class="sig-arrow">-&gt;</span> <span class="sig-return">Channel</span>
+          </div>
+          <div class="table-wrap">
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th>Parameter</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">channel</td>
+                  <td class="param-type">str</td>
+                  <td class="param-desc">Target channel identifier (e.g. name, <code>@name</code>, or t.me link).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p><strong>Raises:</strong> <code>ChannelNotFound</code> if the channel does not exist.
+            <code>ChannelPrivate</code> if the channel is private.
+          </p>
+
+          <h3 id="get-message">get_message</h3>
+          <p>Fetch a single message by ID.</p>
+          <div class="method-sig">
+            <span class="sig-keyword">async def</span> <span class="sig-name">get_message</span>(<span
+              class="sig-param">self</span>, <span class="sig-param">channel</span>: <span class="sig-type">str</span>,
+            <span class="sig-param">msg_id</span>: <span class="sig-type">int</span>) <span
+              class="sig-arrow">-&gt;</span> <span class="sig-return">Message</span>
+          </div>
+          <div class="table-wrap">
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th>Parameter</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">channel</td>
+                  <td class="param-type">str</td>
+                  <td class="param-desc">Target channel identifier.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">msg_id</td>
+                  <td class="param-type">int</td>
+                  <td class="param-desc">Message ID to search for. Must be a positive integer.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p><strong>Raises:</strong> <code>MessageNotFound</code> if the message does not exist or has been deleted.
+          </p>
+
+          <h3 id="iter-messages">iter_messages</h3>
+          <p>Iterate channel posts backwards (newest to oldest).</p>
+          <div class="method-sig">
+            <span class="sig-keyword">async def</span> <span class="sig-name">iter_messages</span>(<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">self</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">channel</span>: <span class="sig-type">str</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">*</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">limit</span>: <span class="sig-type">int | None</span> =
+            <span class="sig-default">None</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">before</span>: <span class="sig-type">int | None</span> =
+            <span class="sig-default">None</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">query</span>: <span class="sig-type">str | None</span> =
+            <span class="sig-default">None</span>,<br>
+            ) <span class="sig-arrow">-&gt;</span> <span class="sig-return">AsyncIterator[Message]</span>
+          </div>
+          <div class="table-wrap">
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th>Parameter</th>
+                  <th>Type</th>
+                  <th>Default</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">channel</td>
+                  <td class="param-type">str</td>
+                  <td class="param-default">—</td>
+                  <td class="param-desc">Target channel identifier.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">limit</td>
+                  <td class="param-type">int | None</td>
+                  <td class="param-default">None</td>
+                  <td class="param-desc">Maximum number of messages to yield.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">before</td>
+                  <td class="param-type">int | None</td>
+                  <td class="param-default">None</td>
+                  <td class="param-desc">Message ID cursor — yields posts strictly older than this ID.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">query</td>
+                  <td class="param-type">str | None</td>
+                  <td class="param-default">None</td>
+                  <td class="param-desc">Filter messages by keyword search.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 id="iter-new-messages">iter_new_messages</h3>
+          <p>Iterate channel posts forwards (oldest to newest).</p>
+          <div class="method-sig">
+            <span class="sig-keyword">async def</span> <span class="sig-name">iter_new_messages</span>(<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">self</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">channel</span>: <span class="sig-type">str</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">*</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">after</span>: <span class="sig-type">int</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">limit</span>: <span class="sig-type">int | None</span> =
+            <span class="sig-default">None</span>,<br>
+            ) <span class="sig-arrow">-&gt;</span> <span class="sig-return">AsyncIterator[Message]</span>
+          </div>
+          <div class="table-wrap">
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th>Parameter</th>
+                  <th>Type</th>
+                  <th>Default</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">channel</td>
+                  <td class="param-type">str</td>
+                  <td class="param-default">—</td>
+                  <td class="param-desc">Target channel identifier.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">after</td>
+                  <td class="param-type">int</td>
+                  <td class="param-default">—</td>
+                  <td class="param-desc">Message ID cursor — yields posts strictly newer than this ID.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">limit</td>
+                  <td class="param-type">int | None</td>
+                  <td class="param-default">None</td>
+                  <td class="param-desc">Maximum number of messages to yield.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 id="search">search</h3>
+          <p>Search channel messages. An alias for <code>iter_messages</code> with a query filter.</p>
+          <div class="method-sig">
+            <span class="sig-keyword">def</span> <span class="sig-name">search</span>(<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">self</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">channel</span>: <span class="sig-type">str</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">query</span>: <span class="sig-type">str</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">*</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">limit</span>: <span class="sig-type">int | None</span> =
+            <span class="sig-default">None</span>,<br>
+            ) <span class="sig-arrow">-&gt;</span> <span class="sig-return">AsyncIterator[Message]</span>
+          </div>
+
+          <h3 id="watch">watch</h3>
+          <p>Start a live poller that continuously yields new posts.</p>
+          <div class="method-sig">
+            <span class="sig-keyword">def</span> <span class="sig-name">watch</span>(<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">self</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">channel</span>: <span class="sig-type">str</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">*</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">interval</span>: <span class="sig-type">float</span> = <span
+              class="sig-default">30.0</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">since_id</span>: <span class="sig-type">int | None</span> =
+            <span class="sig-default">None</span>,<br>
+            ) <span class="sig-arrow">-&gt;</span> <span class="sig-return">AsyncIterator[Message]</span>
+          </div>
+          <div class="table-wrap">
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th>Parameter</th>
+                  <th>Type</th>
+                  <th>Default</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">channel</td>
+                  <td class="param-type">str</td>
+                  <td class="param-default">—</td>
+                  <td class="param-desc">Target channel identifier.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">interval</td>
+                  <td class="param-type">float</td>
+                  <td class="param-default">30.0</td>
+                  <td class="param-desc">Polling interval in seconds.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">since_id</td>
+                  <td class="param-type">int | None</td>
+                  <td class="param-default">None</td>
+                  <td class="param-desc">Filter posts newer than this ID. Defaults to the newest post ID found on
+                    startup.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 id="download-media">download_media</h3>
+          <p>Download media attachments to disk.</p>
+          <div class="method-sig">
+            <span class="sig-keyword">async def</span> <span class="sig-name">download_media</span>(<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">self</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">media</span>: <span class="sig-type">Media | str</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">dest</span>: <span class="sig-type">str | Path | None</span>
+            = <span class="sig-default">None</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">*</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">filename</span>: <span class="sig-type">str | None</span> =
+            <span class="sig-default">None</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">overwrite</span>: <span class="sig-type">bool</span> = <span
+              class="sig-default">False</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">max_bytes</span>: <span class="sig-type">int | None</span> =
+            <span class="sig-default">None</span>,<br>
+            ) <span class="sig-arrow">-&gt;</span> <span class="sig-return">Path</span>
+          </div>
+          <div class="table-wrap">
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th>Parameter</th>
+                  <th>Type</th>
+                  <th>Default</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">media</td>
+                  <td class="param-type">Media | str</td>
+                  <td class="param-default">—</td>
+                  <td class="param-desc">Target Media object or direct download URL string.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">dest</td>
+                  <td class="param-type">str | Path | None</td>
+                  <td class="param-default">None</td>
+                  <td class="param-desc">Directory path or full file destination path.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">filename</td>
+                  <td class="param-type">str | None</td>
+                  <td class="param-default">None</td>
+                  <td class="param-desc">Optional filename override.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">overwrite</td>
+                  <td class="param-type">bool</td>
+                  <td class="param-default">False</td>
+                  <td class="param-desc">Set to <code>True</code> to replace existing files.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">max_bytes</td>
+                  <td class="param-type">int | None</td>
+                  <td class="param-default">None</td>
+                  <td class="param-desc">Exceeding this size raises a <code>DownloadError</code>.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 id="download-bytes">download_bytes</h3>
+          <p>Download media attachments directly into memory as a <code>bytes</code> object.</p>
+          <div class="method-sig">
+            <span class="sig-keyword">async def</span> <span class="sig-name">download_bytes</span>(<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">self</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">media</span>: <span class="sig-type">Media | str</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">*</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="sig-param">max_bytes</span>: <span class="sig-type">int | None</span> =
+            <span class="sig-default">None</span>,<br>
+            ) <span class="sig-arrow">-&gt;</span> <span class="sig-return">bytes</span>
+          </div>
+
+          <hr />
+
+          <!-- ── Data Models ─────────────────────────────────────────── -->
+          <h2 id="data-models">Data Models</h2>
+          <p>Pydantic V2 models returned by TeleGlance client methods.</p>
+
+          <h3 id="channel">Channel</h3>
+          <p>Represents public Telegram channel details.</p>
+          <div class="table-wrap">
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">username</td>
+                  <td class="param-type">str</td>
+                  <td class="param-desc">Target handle of the channel.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">url</td>
+                  <td class="param-type">str</td>
+                  <td class="param-desc">Direct <code>t.me/s/</code> URL.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">title</td>
+                  <td class="param-type">str</td>
+                  <td class="param-desc">Title of the channel.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">description</td>
+                  <td class="param-type">str | None</td>
+                  <td class="param-desc">Text description.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">description_html</td>
+                  <td class="param-type">str | None</td>
+                  <td class="param-desc">HTML description.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">avatar_url</td>
+                  <td class="param-type">str | None</td>
+                  <td class="param-desc">Channel avatar image URL.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">counts</td>
+                  <td class="param-type">ChannelCounts</td>
+                  <td class="param-desc">Approximate subscriber and media attachment counters.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 id="message">Message</h3>
+          <p>Represents a single Telegram post.</p>
+          <div class="table-wrap">
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">id</td>
+                  <td class="param-type">int</td>
+                  <td class="param-desc">Unique message ID.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">channel</td>
+                  <td class="param-type">str</td>
+                  <td class="param-desc">Channel handle.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">url</td>
+                  <td class="param-type">str</td>
+                  <td class="param-desc">Direct message URL.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">date</td>
+                  <td class="param-type">datetime | None</td>
+                  <td class="param-desc">Publish timestamp.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">views</td>
+                  <td class="param-type">int | None</td>
+                  <td class="param-desc">Estimated view count.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">views_str</td>
+                  <td class="param-type">str | None</td>
+                  <td class="param-desc">Raw views text (e.g. <code>"1.2K"</code>).</td>
+                </tr>
+                <tr>
+                  <td class="param-name">author</td>
+                  <td class="param-type">str | None</td>
+                  <td class="param-desc">Signature of the post author.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">text</td>
+                  <td class="param-type">str</td>
+                  <td class="param-desc">Plain text content.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">html</td>
+                  <td class="param-type">str | None</td>
+                  <td class="param-desc">Inner HTML of post content.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">markdown</td>
+                  <td class="param-type">str | None</td>
+                  <td class="param-desc">Lossy markdown formatting.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">entities</td>
+                  <td class="param-type">list[Entity]</td>
+                  <td class="param-desc">Text styles, hyperlinks, and mentions.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">media</td>
+                  <td class="param-type">list[Media]</td>
+                  <td class="param-desc">Media attachments.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">reactions</td>
+                  <td class="param-type">list[Reaction]</td>
+                  <td class="param-desc">Active emoji reactions.</td>
+                </tr>
+                <tr>
+                  <td class="param-name">raw_html</td>
+                  <td class="param-type">str</td>
+                  <td class="param-desc">Complete HTML node string (preserved for custom parsing).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <hr />
+
+          <!-- ── Exceptions ──────────────────────────────────────────── -->
+          <h2 id="exceptions">Custom Exceptions</h2>
+          <div class="card-list">
+            <div class="exc-card"><span class="exc-name">TeleGlanceError</span><span class="exc-desc">Base package
+                exception. All library errors inherit from this.</span></div>
+            <div class="exc-card"><span class="exc-name">InvalidChannel</span><span class="exc-desc">Raised when the
+                channel identifier format is invalid.</span></div>
+            <div class="exc-card"><span class="exc-name">ChannelNotFound</span><span class="exc-desc">Raised when a
+                public channel cannot be found on Telegram.</span></div>
+            <div class="exc-card"><span class="exc-name">ChannelPrivate</span><span class="exc-desc">Raised when a
+                channel is private or web previews are blocked.</span></div>
+            <div class="exc-card"><span class="exc-name">MessageNotFound</span><span class="exc-desc">Raised when a
+                specific message ID does not exist or was deleted.</span></div>
+            <div class="exc-card"><span class="exc-name">ParseError</span><span class="exc-desc">Raised when the parser
+                fails to understand the page layout.</span></div>
+            <div class="exc-card"><span class="exc-name">RateLimited</span><span class="exc-desc">Raised when requests
+                exceed Telegram rate limits after all retries.</span></div>
+            <div class="exc-card"><span class="exc-name">DownloadError</span><span class="exc-desc">Raised when media
+                downloads fail or exceed the size limit.</span></div>
+            <div class="exc-card"><span class="exc-name">CheckpointError</span><span class="exc-desc">Raised when
+                reading or writing checkpoint state fails.</span></div>
+          </div>
+        </article>
+
+        <nav class="doc-footer" aria-label="Page navigation">
+          <a href="advanced-customization.html" class="footer-prev" id="footer-prev">
+            <span class="nav-label">← Previous</span>
+            <span class="nav-title">Advanced Customization</span>
+          </a>
+          <span></span>
+        </nav>
+      </div>
+
+      <footer class="site-footer">
+        TeleGlance · MIT License ·
+        <a href="https://github.com/NWGKGIT/TeleGlance" target="_blank" rel="noopener">GitHub</a> ·
+        <a href="https://pypi.org/project/teleglance/" target="_blank" rel="noopener">PyPI</a>
+      </footer>
+    </main>
+
+    <aside class="toc-sidebar" aria-label="On this page">
+      <div class="toc-title">On this page</div>
+      <ul class="toc-list" id="toc-list"></ul>
+    </aside>
+  </div>
+
+  <button class="scroll-top" id="scroll-top" aria-label="Scroll to top">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+      stroke-linejoin="round">
+      <polyline points="18 15 12 9 6 15" />
+    </svg>
+  </button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  <script src="js/main.js"></script>
+</body>
+
+</html>
