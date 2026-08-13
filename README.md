@@ -63,7 +63,7 @@ uv add teleglance
 * **CLI Utility**: `pip install "teleglance[cli]"` or `uv add "teleglance[cli]"`
 * **SOCKS Proxy Support**: `pip install "teleglance[socks]"` or `uv add "teleglance[socks]"`
 
-Supports Python 3.10 through 3.14. Refer to the complete installation documentation at [DOCS_URL_PLACEHOLDER] for configuration options.
+Supports Python 3.10 through 3.14. Refer to the complete installation documentation at https://NWGKGIT.github.io/teleglance/ for configuration options.
 
 ---
 
@@ -110,7 +110,7 @@ TeleGlanceClient
 └── download_bytes()    Download media to memory
 ```
 
-For the exhaustive API reference, check the complete documentation site at [DOCS_URL_PLACEHOLDER].
+For the exhaustive API reference, check the complete documentation site at https://NWGKGIT.github.io/teleglance/.
 
 ---
 
@@ -161,7 +161,7 @@ path = await client.download_media(message.media[0], dest="./downloads")
 # In-memory download
 data = await client.download_bytes(message.media[0])
 ```
-*Note: Document downloads are not supported on web previews. Check the media guides at [DOCS_URL_PLACEHOLDER] for details.*
+*Note: Document downloads are not supported on web previews. Check the media guides at https://NWGKGIT.github.io/teleglance/ for details.*
 
 ### Resumable Collection
 Perform history collection with checkpoint states:
@@ -237,7 +237,7 @@ teleglance messages nahomssandbox --limit 10 --ndjson
 teleglance download nahomssandbox 1062 -o downloads/
 ```
 
-See the CLI guides at [DOCS_URL_PLACEHOLDER] for options.
+See the CLI guides at https://NWGKGIT.github.io/teleglance/ for options.
 
 ---
 
@@ -255,14 +255,14 @@ uv run mypy
 uv run pytest --cov
 ```
 
-Refer to the development guides at [DOCS_URL_PLACEHOLDER] for fixture recording instructions.
+Refer to the development guides at https://NWGKGIT.github.io/teleglance/ for fixture recording instructions.
 
 ---
 
 ## Documentation
 
 The complete documentation, including full guides and API reference, is available at:
-[DOCS_URL_PLACEHOLDER]
+https://NWGKGIT.github.io/teleglance/
 
 ---
 
