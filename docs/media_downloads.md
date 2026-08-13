@@ -19,6 +19,7 @@ You can download media using two client methods:
 import asyncio
 from teleglance import TeleGlanceClient
 
+
 async def main():
     async with TeleGlanceClient() as client:
         async for message in client.iter_messages("nahomssandbox", limit=10):
@@ -28,11 +29,12 @@ async def main():
                     # Download photo to local ./downloads folder
                     saved_path = await client.download_media(media, dest="./downloads")
                     print(f"Photo saved: {saved_path}")
-                    
+
                 elif media.type == "sticker":
                     # Retrieve sticker bytes directly
                     image_bytes = await client.download_bytes(media)
                     print(f"Sticker downloaded. Size: {len(image_bytes)} bytes")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -16,3 +16,9 @@ htmlcov/
 
 # Live-recorded fixtures (scratch, machine-specific)
 tests/fixtures/live/
+
+.env
+
+.mypy_cache
+.pytest_cache
+.ruff_cache

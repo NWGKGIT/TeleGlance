@@ -25,24 +25,28 @@ To scrape history backwards without reprocessing messages, pass the `oldest_id` 
 import asyncio
 from teleglance import JsonCheckpointStore, MessageCheckpoint, TeleGlanceClient
 
+
 async def main():
     # Initialize store pointing to a local file
     store = JsonCheckpointStore("scraper_state.json")
-    
+
     # Load existing state, or fall back to a empty checkpoint
     state = await store.load("history:nahomssandbox") or MessageCheckpoint(channel="nahomssandbox")
-    
+
     async with TeleGlanceClient() as client:
         # Pass state.oldest_id to prevent duplicate scraping
-        async for message in client.iter_messages("nahomssandbox", before=state.oldest_id, limit=50):
+        async for message in client.iter_messages(
+            "nahomssandbox", before=state.oldest_id, limit=50
+        ):
             # Process the message
             print(f"Scraped history message: {message.id}")
-            
+
             # Record changes to watermarks
             state = state.record(message)
-            
+
             # Save checkpoint state atomically
             await store.save("history:nahomssandbox", state)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -78,10 +82,9 @@ The checkpoint store implements a basic `CheckpointStore` protocol. You can subs
 from typing import Protocol
 from teleglance import MessageCheckpoint
 
-class CheckpointStore(Protocol):
-    async def load(self, key: str) -> MessageCheckpoint | None:
-        ...
 
-    async def save(self, key: str, checkpoint: MessageCheckpoint) -> None:
-        ...
+class CheckpointStore(Protocol):
+    async def load(self, key: str) -> MessageCheckpoint | None: ...
+
+    async def save(self, key: str, checkpoint: MessageCheckpoint) -> None: ...
 ```

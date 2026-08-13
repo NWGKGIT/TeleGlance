@@ -52,6 +52,7 @@ Create a new Python file named `test_teleglance.py` with the following content t
 import asyncio
 from teleglance import TeleGlanceClient
 
+
 async def main():
     async with TeleGlanceClient() as client:
         # Fetch target channel details
@@ -63,6 +64,7 @@ async def main():
         # Fetch and print the latest message text
         async for message in client.iter_messages("nahomssandbox", limit=1):
             print(f"Latest Post text: {message.text[:120]}")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

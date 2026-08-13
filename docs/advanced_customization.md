@@ -12,17 +12,17 @@ Observability hooks use HTTPX native event hooks. Pass functions into `request_h
 import httpx
 from teleglance import TeleGlanceClient
 
+
 async def on_request(request: httpx.Request):
     print(f"Request: {request.method} {request.url}")
+
 
 async def on_response(response: httpx.Response):
     print(f"Response: {response.status_code}")
 
+
 async def main():
-    async with TeleGlanceClient(
-        request_hooks=[on_request],
-        response_hooks=[on_response]
-    ) as client:
+    async with TeleGlanceClient(request_hooks=[on_request], response_hooks=[on_response]) as client:
         await client.get_channel("nahomssandbox")
 ```
 
@@ -67,6 +67,7 @@ from teleglance import TeleGlanceClient, Unsupported, default_registry
 # 1. Initialize registry with default parsers
 registry = default_registry()
 
+
 # 2. Define custom parsing function
 def parse_gift_widget(message_node):
     block = message_node.css_first(".tgme_widget_message_gift")
@@ -74,6 +75,7 @@ def parse_gift_widget(message_node):
         # Return Unsupported model carrying the raw HTML
         return [Unsupported(raw_html=block.html)]
     return []
+
 
 # 3. Register custom function
 registry.register("gift", parse_gift_widget)

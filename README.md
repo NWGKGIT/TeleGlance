@@ -75,6 +75,7 @@ The following example demonstrates how to retrieve metadata and iterate recent p
 import asyncio
 from teleglance import TeleGlanceClient
 
+
 async def main():
     async with TeleGlanceClient() as client:
         # Fetch channel metadata
@@ -85,6 +86,7 @@ async def main():
         # Iterate the last 10 messages
         async for message in client.iter_messages("nahomssandbox", limit=10):
             print(f"[{message.id}] ({message.date}): {message.text[:80]}")
+
 
 asyncio.run(main())
 ```
