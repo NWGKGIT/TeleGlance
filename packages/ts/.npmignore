@@ -1,0 +1,8 @@
+src
+tests
+node_modules
+*.ts
+!dist/**/*.d.ts
+vitest.config.ts
+tsup.config.ts
+eslint.config.js
