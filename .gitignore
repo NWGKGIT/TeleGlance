@@ -2,7 +2,6 @@
 __pycache__/
 *.py[oc]
 build/
-dist/
 wheels/
 *.egg-info
 
@@ -15,10 +14,25 @@ wheels/
 htmlcov/
 
 # Live-recorded fixtures (scratch, machine-specific)
-tests/fixtures/live/
+packages/python/tests/fixtures/live/
 
+# Python dist
+packages/python/dist/
+
+# Node
+node_modules/
+packages/ts/node_modules/
+
+# TypeScript build output
+packages/ts/dist/
+
+# npm lock (use package-lock.json)
+yarn.lock
+pnpm-lock.yaml
+
+# Env / secrets
 .env
 
+# Tool caches
 .mypy_cache
-.pytest_cache
 .ruff_cache
