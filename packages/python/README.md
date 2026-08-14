@@ -31,6 +31,18 @@ asyncio.run(main())
 
 The package also provides typed models, checkpoints, media downloads, parser customization, and a `teleglance` command-line interface.
 
+## JSON capture
+
+Library results can be serialized with `dump_json` or saved safely with `capture_json`:
+
+```python
+from teleglance import capture_json
+
+capture_json(messages, "messages.json")
+```
+
+The CLI writes JSON to standard output by default. Use `--output capture.json` to save `channel`, `messages`, or `search` output, or capture `watch` as NDJSON. Existing files require `--overwrite`.
+
 ## Development
 
 ```sh

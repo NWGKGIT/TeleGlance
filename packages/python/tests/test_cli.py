@@ -37,6 +37,17 @@ def test_messages_default_is_json_array(feed_html):
     assert [message["id"] for message in data] == [110, 108]
 
 
+def test_channel_output_captures_json_without_replacing_files(feed_html, tmp_path):
+    output = tmp_path / "channel.json"
+    with respx.mock:
+        respx.get("https://t.me/s/testchan").mock(return_value=httpx.Response(200, text=feed_html))
+        result = CliRunner().invoke(cli, ["channel", "testchan", "--output", str(output)])
+    assert result.exit_code == 0, result.output
+    assert result.output == ""
+    assert json.loads(output.read_text())["username"] == "testchan"
+    assert CliRunner().invoke(cli, ["channel", "testchan", "--output", str(output)]).exit_code != 0
+
+
 def test_channel_not_found_is_clean_error(not_found_html):
     with respx.mock:
         respx.get("https://t.me/s/nope").mock(return_value=httpx.Response(200, text=not_found_html))
