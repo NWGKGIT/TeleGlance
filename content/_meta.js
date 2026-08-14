@@ -8,6 +8,7 @@ export default {
     display: "hidden",
   },
   "getting-started": "Getting Started",
+  typescript: "TypeScript",
   "api-reference": "API Reference",
   checkpoints: "Checkpoints & Resumability",
   "media-downloads": "Media Downloads",

@@ -1,0 +1,23 @@
+---
+title: TypeScript
+---
+
+# TeleGlance for TypeScript
+
+Install with `npm install teleglance`. The Node.js package supports Node 18+, ESM, CommonJS, and TypeScript declarations.
+
+```ts
+import { TeleGlanceClient } from "teleglance";
+
+const client = new TeleGlanceClient();
+try {
+  const channel = await client.getChannel("telegram");
+  for await (const message of client.iterMessages("telegram", { limit: 10 })) {
+    console.log(message.id, message.text);
+  }
+} finally {
+  await client.close();
+}
+```
+
+Use `captureJson` for protected JSON file output and `appendJson` for NDJSON streams. The CLI supports `--output`, `--overwrite`, and `--ndjson` for channel, messages, search, and watch captures.

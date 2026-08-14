@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TypeScript — TeleGlance</title>
+  <meta name="description" content="Use TeleGlance from Node.js and TypeScript to inspect public Telegram channels without API credentials." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/highlight-overrides.css" />
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <button class="hamburger" id="hamburger" aria-label="Toggle sidebar">☰</button>
+    <a href="index.html" class="topbar-logo">TeleGlance</a>
+    <span class="topbar-version">Python + TypeScript</span>
+    <div class="topbar-spacer"></div>
+    <nav class="topbar-links" aria-label="Top navigation">
+      <a href="getting-started.html" class="topbar-link">Python docs</a>
+      <a href="typescript.html" class="topbar-link">TypeScript</a>
+      <a href="https://github.com/NWGKGIT/TeleGlance" class="topbar-github" target="_blank" rel="noopener" aria-label="GitHub">GitHub</a>
+      <div class="topbar-pip"><span class="dollar">$</span><span class="pip-cmd">npm install teleglance</span></div>
+    </nav>
+  </header>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <div class="page-wrapper">
+    <aside class="sidebar" id="sidebar" aria-label="Documentation navigation">
+      <nav>
+        <span class="sidebar-label">Overview</span>
+        <ul class="sidebar-nav"><li><a href="index.html">Home</a></li></ul>
+        <span class="sidebar-label">Languages</span>
+        <ul class="sidebar-nav">
+          <li><a href="getting-started.html">Python</a></li>
+          <li><a href="typescript.html" class="active">TypeScript</a></li>
+        </ul>
+        <span class="sidebar-label">Python guides</span>
+        <ul class="sidebar-nav">
+          <li><a href="checkpoints.html">Checkpoints &amp; Resumability</a></li>
+          <li><a href="media-downloads.html">Media Downloads</a></li>
+          <li><a href="advanced-customization.html">Advanced Customization</a></li>
+          <li><a href="api-reference.html">API Reference</a></li>
+        </ul>
+        <span class="sidebar-label">Project</span>
+        <ul class="sidebar-nav">
+          <li><a href="https://www.npmjs.com/package/teleglance" target="_blank" rel="noopener">npm</a></li>
+          <li><a href="https://pypi.org/project/teleglance/" target="_blank" rel="noopener">PyPI</a></li>
+          <li><a href="https://github.com/NWGKGIT/TeleGlance" target="_blank" rel="noopener">GitHub</a></li>
+        </ul>
+      </nav>
+    </aside>
+    <main class="main-content" id="main">
+      <div class="content-body">
+        <nav class="breadcrumb" aria-label="Breadcrumb"><a href="index.html">Home</a><span>›</span><span>TypeScript</span></nav>
+        <article class="prose">
+          <h1>TeleGlance for TypeScript</h1>
+          <p class="subtitle">A typed async client for public Telegram channels. No API key, MTProto credentials, or Telegram account.</p>
+          <hr />
+          <h2 id="install">Install</h2>
+          <p>TeleGlance supports Node.js 18 and later, with ESM, CommonJS, and TypeScript declarations included.</p>
+          <div class="code-block"><div class="code-header"><span class="code-lang">Bash</span><button class="copy-btn" aria-label="Copy code">Copy</button></div><pre><code class="language-bash">npm install teleglance</code></pre></div>
+          <h2 id="first-request">Your first request</h2>
+          <div class="code-block"><div class="code-header"><span class="code-lang">TypeScript</span><button class="copy-btn" aria-label="Copy code">Copy</button></div><pre><code class="language-typescript">import { TeleGlanceClient } from 'teleglance';
+
+const client = new TeleGlanceClient();
+try {
+  const channel = await client.getChannel('telegram');
+  console.log(channel.title, channel.counts.subscribers);
+
+  for await (const message of client.iterMessages('telegram', { limit: 10 })) {
+    console.log(message.id, message.date, message.text.slice(0, 80));
+  }
+} finally {
+  await client.close();
+}</code></pre></div>
+          <h2 id="messages">Messages, search, and live updates</h2>
+          <p>History is yielded newest first. Use <code>before</code> for older history, <code>after</code> for forward-only updates, and <code>search</code> for Telegram preview search.</p>
+          <div class="code-block"><div class="code-header"><span class="code-lang">TypeScript</span><button class="copy-btn" aria-label="Copy code">Copy</button></div><pre><code class="language-typescript">for await (const message of client.search('telegram', 'release', { limit: 20 })) {
+  console.log(message.url);
+}
+
+for await (const message of client.watch('telegram', { interval: 30_000 })) {
+  console.log('new post:', message.id);
+}</code></pre></div>
+          <h2 id="json-capture">JSON capture</h2>
+          <p>Use the exported helpers for durable captures. <code>captureJson</code> writes formatted JSON safely and refuses to replace an existing file unless you opt in; <code>appendJson</code> adds one NDJSON record for long-running streams.</p>
+          <div class="code-block"><div class="code-header"><span class="code-lang">TypeScript</span><button class="copy-btn" aria-label="Copy code">Copy</button></div><pre><code class="language-typescript">import { captureJson, appendJson } from 'teleglance';
+
+const messages = [];
+for await (const message of client.iterMessages('telegram', { limit: 50 })) {
+  messages.push(message);
+}
+await captureJson(messages, 'telegram.json');
+
+// For a stream created with captureJson([], 'watch.ndjson', { ndjson: true }):
+await appendJson({ id: 42, text: 'A new post' }, 'watch.ndjson');</code></pre></div>
+          <h2 id="cli">CLI</h2>
+          <p>The <code>teleglance</code> executable prints JSON by default. Use <code>--ndjson</code> for record streams and <code>--output</code> to save a capture. Existing files are protected unless <code>--overwrite</code> is supplied.</p>
+          <div class="code-block"><div class="code-header"><span class="code-lang">Bash</span><button class="copy-btn" aria-label="Copy code">Copy</button></div><pre><code class="language-bash">teleglance channel telegram --output channel.json
+teleglance messages telegram --limit 100 --output history.json
+teleglance watch telegram --output watch.ndjson --overwrite</code></pre></div>
+          <h2 id="api-parity">API at a glance</h2>
+          <table><thead><tr><th>Task</th><th>TypeScript</th></tr></thead><tbody>
+            <tr><td>Channel metadata</td><td><code>client.getChannel(name)</code></td></tr>
+            <tr><td>Single message</td><td><code>client.getMessage(name, id)</code></td></tr>
+            <tr><td>History</td><td><code>client.iterMessages(name, options)</code></td></tr>
+            <tr><td>New messages</td><td><code>client.iterNewMessages(name, options)</code></td></tr>
+            <tr><td>Media</td><td><code>client.downloadMedia(media, destination)</code></td></tr>
+          </tbody></table>
+          <p>All returned objects are plain typed values and can be passed directly to <code>JSON.stringify</code>; use the capture helpers when you need consistent formatting, file protection, or NDJSON.</p>
+        </article>
+      </div>
+    </main>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  <script src="js/main.js"></script>
+</body>
+</html>
