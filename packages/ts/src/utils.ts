@@ -14,7 +14,7 @@ export function bgImageUrl(style: string | null | undefined): string | null {
 export function parseCount(value: string | null | undefined): number | null {
   if (!value) return null;
 
-  const cleaned = value.replace(/\s+/g, '');
+  const cleaned = value.replace(/[\s,]+/g, '');
   const lower = cleaned.toLowerCase();
 
   // Check for suffix multipliers
