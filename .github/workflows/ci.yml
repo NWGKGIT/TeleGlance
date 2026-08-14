@@ -5,10 +5,33 @@ on:
   pull_request:
 
 jobs:
+  changes:
+    name: Detect package changes
+    runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.filter.outputs.python }}
+      typescript: ${{ steps.filter.outputs.typescript }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            python:
+              - 'packages/python/**'
+              - '.github/workflows/ci.yml'
+            typescript:
+              - 'packages/ts/**'
+              - '.github/workflows/ci.yml'
+
   # ── Python package ────────────────────────────────────────────────────────
 
   py-quality:
     name: Python quality (3.13)
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -27,6 +50,8 @@ jobs:
 
   py-compatibility:
     name: Python ${{ matrix.python }}
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -46,6 +71,8 @@ jobs:
 
   py-package:
     name: Python package build
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -66,6 +93,8 @@ jobs:
 
   ts-quality:
     name: TypeScript quality
+    needs: changes
+    if: needs.changes.outputs.typescript == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -84,6 +113,8 @@ jobs:
 
   ts-package:
     name: TypeScript package build
+    needs: changes
+    if: needs.changes.outputs.typescript == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:

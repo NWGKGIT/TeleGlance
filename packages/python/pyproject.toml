@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "teleglance"
 version = "0.1.0"
 description = "Async client for public Telegram channels via t.me web previews with no API keys or MTProto API"
-readme = "../../README.md"
+readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 authors = [{ name = "Nahom W.G" }]
