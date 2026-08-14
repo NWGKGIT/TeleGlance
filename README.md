@@ -97,6 +97,12 @@ Full documentation is at **<https://NWGKGIT.github.io/TeleGlance/>**.
 
 ---
 
+## Credits
+
+TypeScript port by [@FuadTesfaye](https://github.com/FuadTesfaye).
+
+---
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).
