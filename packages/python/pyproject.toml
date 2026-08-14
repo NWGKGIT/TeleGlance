@@ -34,7 +34,7 @@ dependencies = [
 Homepage = "https://github.com/NWGKGIT/TeleGlance"
 Repository = "https://github.com/NWGKGIT/TeleGlance"
 Issues = "https://github.com/NWGKGIT/TeleGlance/issues"
-Changelog = "https://github.com/NWGKGIT/TeleGlance/blob/main/CHANGELOG.md"
+Changelog = "https://github.com/NWGKGIT/TeleGlance/blob/main/packages/python/CHANGELOG.md"
 
 [project.optional-dependencies]
 cli = ["click>=8.1"]

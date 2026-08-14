@@ -5,8 +5,37 @@ on:
   pull_request:
 
 jobs:
-  quality:
+  changes:
+    name: Detect package changes
     runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.filter.outputs.python }}
+      typescript: ${{ steps.filter.outputs.typescript }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            python:
+              - 'packages/python/**'
+              - '.github/workflows/ci.yml'
+            typescript:
+              - 'packages/ts/**'
+              - '.github/workflows/ci.yml'
+
+  # ── Python package ────────────────────────────────────────────────────────
+
+  py-quality:
+    name: Python quality (3.13)
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/python
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -19,8 +48,14 @@ jobs:
       - run: uv run mypy
       - run: uv run pytest --cov
 
-  compatibility:
+  py-compatibility:
+    name: Python ${{ matrix.python }}
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/python
     strategy:
       fail-fast: false
       matrix:
@@ -34,8 +69,14 @@ jobs:
       - run: uv sync --all-extras --group dev
       - run: uv run pytest
 
-  package:
+  py-package:
+    name: Python package build
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/python
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -47,3 +88,44 @@ jobs:
       - run: uv venv /tmp/teleglance-smoke
       - run: uv pip install --python /tmp/teleglance-smoke/bin/python "click>=8.1" dist/*.whl
       - run: /tmp/teleglance-smoke/bin/teleglance --help
+
+  # ── TypeScript package ────────────────────────────────────────────────────
+
+  ts-quality:
+    name: TypeScript quality
+    needs: changes
+    if: needs.changes.outputs.typescript == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/ts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: packages/ts/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+
+  ts-package:
+    name: TypeScript package build
+    needs: changes
+    if: needs.changes.outputs.typescript == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/ts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: packages/ts/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: node -e "require('./dist/index.cjs')" 2>/dev/null || node --input-type=module --eval "import './dist/index.js'"

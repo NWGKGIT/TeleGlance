@@ -1,0 +1,58 @@
+{
+  "name": "teleglance",
+  "version": "0.1.0",
+  "description": "Async client for public Telegram channels via t.me web previews",
+  "license": "MIT",
+  "author": "Nahom W.G",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NWGKGIT/TeleGlance.git",
+    "directory": "packages/ts"
+  },
+  "bugs": "https://github.com/NWGKGIT/TeleGlance/issues",
+  "homepage": "https://github.com/NWGKGIT/TeleGlance#readme",
+  "keywords": ["telegram", "t.me", "channels", "scraper", "async"],
+  "engines": {
+    "node": ">=18"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "bin": {
+    "teleglance": "./dist/cli/bin.cjs"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src tests",
+    "prepublishOnly": "npm run build && npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "node-html-parser": "^6.1.13",
+    "undici": "^6.20.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.5",
+    "@typescript-eslint/eslint-plugin": "^8.8.0",
+    "@typescript-eslint/parser": "^8.8.0",
+    "eslint": "^9.11.1",
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.1"
+  },
+  "sideEffects": false
+}
