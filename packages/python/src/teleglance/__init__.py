@@ -16,6 +16,7 @@ from .errors import (
     RequestFailed,
     TeleGlanceError,
 )
+from .json import capture_json, dump_json
 from .models import (
     Channel,
     ChannelCounts,
@@ -43,7 +44,7 @@ from .transport import Transport, TransportProtocol
 try:
     __version__ = version("teleglance")
 except PackageNotFoundError:  # pragma: no cover - source tree without installation
-    __version__ = "0.1.0"
+    __version__ = "0.1.1"
 
 Client = TeleGlanceClient  # convenience alias
 
@@ -55,6 +56,7 @@ __all__ = [
     "CheckpointError",
     "CheckpointStore",
     "Client",
+    "capture_json",
     "DEFAULT_SELECTORS",
     "DocumentRef",
     "DownloadError",
@@ -88,4 +90,5 @@ __all__ = [
     "Video",
     "Voice",
     "default_registry",
+    "dump_json",
 ]

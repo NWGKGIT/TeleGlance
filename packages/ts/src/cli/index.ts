@@ -3,8 +3,17 @@ import { Command } from 'commander';
 import { TeleGlanceClient } from '../client.js';
 import { JsonCheckpointStore, recordCheckpoint, type MessageCheckpoint } from '../checkpoints.js';
 import { TeleGlanceError, DownloadError } from '../errors.js';
+import { appendJson, captureJson, dumpJson } from '../json.js';
 
 export const program = new Command();
+
+async function emit(value: unknown, cmdOpts: { output?: string; overwrite?: boolean }, ndjson = false): Promise<void> {
+  if (cmdOpts.output) {
+    await captureJson(value, cmdOpts.output, { ndjson, overwrite: cmdOpts.overwrite });
+  } else {
+    process.stdout.write(dumpJson(value, { ndjson }));
+  }
+}
 
 program
   .name('teleglance')
@@ -18,13 +27,15 @@ program
 program
   .command('channel')
   .argument('<channel>', 'Channel username')
+  .option('-o, --output <path>', 'Write JSON to a file')
+  .option('--overwrite', 'Replace an existing output file')
   .description('Channel metadata as JSON')
-  .action(async (channel: string) => {
+  .action(async (channel: string, cmdOpts: any) => {
     const opts = program.opts();
     const client = new TeleGlanceClient({ ...opts });
     try {
       const ch = await client.getChannel(channel);
-      console.log(JSON.stringify(ch, null, 2));
+      await emit(ch, cmdOpts);
     } catch (err) {
       if (err instanceof TeleGlanceError) {
         console.error(err.message);
@@ -44,6 +55,8 @@ program
   .option('--after <id>', 'Stream newer messages oldest first', parseInt)
   .option('--query <text>', 'Server-side text search')
   .option('--ndjson', 'One compact JSON object per line')
+  .option('-o, --output <path>', 'Write JSON or NDJSON to a file')
+  .option('--overwrite', 'Replace an existing output file')
   .option('--checkpoint <path>', 'Checkpoint file path')
   .option('--checkpoint-key <key>', 'Checkpoint key')
   .description('Dump history newest first, or updates oldest first with --after')
@@ -81,34 +94,24 @@ program
       if (cmdOpts.after !== undefined) {
         const cursor = state && state.newestId !== null ? state.newestId : cmdOpts.after;
         for await (const msg of client.iterNewMessages(name, { after: cursor, limit: cmdOpts.limit })) {
-          if (cmdOpts.ndjson) {
-            console.log(JSON.stringify(msg));
-            if (store && state) {
-              state = recordCheckpoint(state, msg);
-              await store.save(key, state);
-            }
-          } else {
-            collected.push(msg);
+          collected.push(msg);
+          if (store && state) {
+            state = recordCheckpoint(state, msg);
+            await store.save(key, state);
           }
         }
       } else {
         const cursor = state && state.oldestId !== null ? state.oldestId : cmdOpts.before;
         for await (const msg of client.iterMessages(name, { limit: cmdOpts.limit, before: cursor, query: cmdOpts.query })) {
-          if (cmdOpts.ndjson) {
-            console.log(JSON.stringify(msg));
-            if (store && state) {
-              state = recordCheckpoint(state, msg);
-              await store.save(key, state);
-            }
-          } else {
-            collected.push(msg);
+          collected.push(msg);
+          if (store && state) {
+            state = recordCheckpoint(state, msg);
+            await store.save(key, state);
           }
         }
       }
 
-      if (!cmdOpts.ndjson) {
-        console.log(JSON.stringify(collected, null, 2));
-      }
+      await emit(collected, cmdOpts, cmdOpts.ndjson);
     } catch (err) {
       if (err instanceof TeleGlanceError) {
         console.error(err.message);
@@ -126,6 +129,8 @@ program
   .argument('<query>', 'Search query')
   .option('--limit <n>', 'Max messages', parseInt, 20)
   .option('--ndjson', 'One compact JSON object per line')
+  .option('-o, --output <path>', 'Write JSON or NDJSON to a file')
+  .option('--overwrite', 'Replace an existing output file')
   .description('Search within a channel')
   .action(async (channel: string, query: string, cmdOpts: any) => {
     const opts = program.opts();
@@ -133,15 +138,9 @@ program
     try {
       const collected: any[] = [];
       for await (const msg of client.search(channel, query, { limit: cmdOpts.limit })) {
-        if (cmdOpts.ndjson) {
-          console.log(JSON.stringify(msg));
-        } else {
-          collected.push(msg);
-        }
+        collected.push(msg);
       }
-      if (!cmdOpts.ndjson) {
-        console.log(JSON.stringify(collected, null, 2));
-      }
+      await emit(collected, cmdOpts, cmdOpts.ndjson);
     } catch (err) {
       if (err instanceof TeleGlanceError) {
         console.error(err.message);
@@ -160,11 +159,14 @@ program
   .option('--since-id <id>', 'Only yield messages with bigger id', parseInt)
   .option('--checkpoint <path>', 'Checkpoint file path')
   .option('--checkpoint-key <key>', 'Checkpoint key')
+  .option('-o, --output <path>', 'Write NDJSON to a file')
+  .option('--overwrite', 'Replace an existing output file')
   .description('Stream new posts as NDJSON until interrupted')
   .action(async (channel: string, cmdOpts: any) => {
     const opts = program.opts();
     const client = new TeleGlanceClient({ ...opts });
     try {
+      if (cmdOpts.output) await captureJson([], cmdOpts.output, { ndjson: true, overwrite: cmdOpts.overwrite });
       const name = TeleGlanceClient.normalizeChannel(channel);
       const key = cmdOpts.checkpointKey || `watch:${name}`;
 
@@ -183,7 +185,8 @@ program
       }
 
       for await (const msg of client.watch(name, { interval: cmdOpts.interval * 1000, sinceId: since })) {
-        console.log(JSON.stringify(msg));
+        if (cmdOpts.output) await appendJson(msg, cmdOpts.output);
+        else process.stdout.write(dumpJson([msg], { ndjson: true }));
         if (store && state) {
           state = recordCheckpoint(state, msg);
           await store.save(key, state);

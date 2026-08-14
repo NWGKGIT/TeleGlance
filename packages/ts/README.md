@@ -30,6 +30,18 @@ try {
 
 The package also exposes typed models, parsing errors, checkpoints, media downloads, custom parser registries, and a `teleglance` CLI. Run `teleglance --help` for command usage.
 
+## JSON capture
+
+Serialize values with `dumpJson` or save them safely with `captureJson`:
+
+```ts
+import { captureJson } from 'teleglance';
+
+await captureJson(messages, 'messages.json');
+```
+
+The CLI writes JSON to standard output by default. Use `--output capture.json` to save `channel`, `messages`, or `search` output, or capture `watch` as NDJSON. Existing files require `--overwrite`.
+
 ## Development
 
 ```sh

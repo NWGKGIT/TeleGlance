@@ -1,4 +1,5 @@
 export { TeleGlanceClient, Client } from './client.js';
+export { dumpJson, captureJson, appendJson } from './json.js';
 export { Transport, type TransportProtocol, type RequestHook, type ResponseHook } from './transport.js';
 export type { Channel, ChannelCounts } from './models/channel.js';
 export type {

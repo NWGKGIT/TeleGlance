@@ -7,7 +7,6 @@ Everything prints JSON (or NDJSON for streams) so output pipes cleanly into
 from __future__ import annotations
 
 import asyncio
-import json
 import sys
 from collections.abc import Awaitable, Callable
 from pathlib import Path
@@ -16,6 +15,7 @@ from typing import Any
 from .checkpoints import JsonCheckpointStore, MessageCheckpoint
 from .client import TeleGlanceClient
 from .errors import DownloadError, TeleGlanceError
+from .json import capture_json, dump_json
 
 try:
     import click
@@ -41,13 +41,21 @@ if click is not None:
         except TeleGlanceError as exc:
             raise click.ClickException(str(exc)) from exc
 
-    def _emit(model: Any, ndjson: bool) -> None:
-        indent = None if ndjson else 2
-        click.echo(model.model_dump_json(indent=indent))
-        sys.stdout.flush()
-
-    def _emit_array(models: list[Any]) -> None:
-        click.echo(json.dumps([model.model_dump(mode="json") for model in models], indent=2))
+    def _emit(
+        value: Any,
+        *,
+        ndjson: bool = False,
+        output: Path | None = None,
+        overwrite: bool = False,
+    ) -> None:
+        try:
+            if output is not None:
+                capture_json(value, output, ndjson=ndjson, overwrite=overwrite)
+            else:
+                click.echo(dump_json(value, ndjson=ndjson), nl=False)
+                sys.stdout.flush()
+        except (FileExistsError, OSError, TypeError) as exc:
+            raise click.ClickException(str(exc)) from exc
 
     async def _checkpoint(
         path: Path,
@@ -96,12 +104,14 @@ if click is not None:
 
     @cli.command()
     @click.argument("channel")
+    @click.option("-o", "--output", type=click.Path(dir_okay=False, path_type=Path), default=None)
+    @click.option("--overwrite", is_flag=True, help="Replace an existing output file.")
     @click.pass_obj
-    def channel(obj: dict[str, Any], channel: str) -> None:
+    def channel(obj: dict[str, Any], channel: str, output: Path | None, overwrite: bool) -> None:
         """Channel metadata as JSON."""
 
         async def go(client: TeleGlanceClient) -> None:
-            _emit(await client.get_channel(channel), ndjson=False)
+            _emit(await client.get_channel(channel), output=output, overwrite=overwrite)
 
         _run(obj, go)
 
@@ -122,6 +132,8 @@ if click is not None:
     )
     @click.option("--query", type=str, default=None, help="Server-side text search.")
     @click.option("--ndjson", is_flag=True, help="One compact JSON object per line.")
+    @click.option("-o", "--output", type=click.Path(dir_okay=False, path_type=Path), default=None)
+    @click.option("--overwrite", is_flag=True, help="Replace an existing output file.")
     @click.option("--checkpoint", type=click.Path(dir_okay=False, path_type=Path), default=None)
     @click.option("--checkpoint-key", type=str, default=None)
     @click.pass_obj
@@ -133,6 +145,8 @@ if click is not None:
         after: int | None,
         query: str | None,
         ndjson: bool,
+        output: Path | None,
+        overwrite: bool,
         checkpoint: Path | None,
         checkpoint_key: str | None,
     ) -> None:
@@ -165,15 +179,11 @@ if click is not None:
 
             collected = []
             async for message in iterator:
-                if ndjson:
-                    _emit(message, ndjson=True)
-                    if store is not None and state is not None:
-                        state = state.record(message)
-                        await store.save(key, state)
-                else:
-                    collected.append(message)
-            if not ndjson:
-                _emit_array(collected)
+                collected.append(message)
+                if store is not None and state is not None:
+                    state = state.record(message)
+                    await store.save(key, state)
+            _emit(collected, ndjson=ndjson, output=output, overwrite=overwrite)
 
         _run(obj, go)
 
@@ -182,19 +192,25 @@ if click is not None:
     @click.argument("query")
     @click.option("--limit", type=click.IntRange(min=0), default=20, show_default=True)
     @click.option("--ndjson", is_flag=True)
+    @click.option("-o", "--output", type=click.Path(dir_okay=False, path_type=Path), default=None)
+    @click.option("--overwrite", is_flag=True, help="Replace an existing output file.")
     @click.pass_obj
-    def search(obj: dict[str, Any], channel: str, query: str, limit: int, ndjson: bool) -> None:
+    def search(
+        obj: dict[str, Any],
+        channel: str,
+        query: str,
+        limit: int,
+        ndjson: bool,
+        output: Path | None,
+        overwrite: bool,
+    ) -> None:
         """Search within a channel."""
 
         async def go(client: TeleGlanceClient) -> None:
             collected = []
             async for message in client.search(channel, query, limit=limit):
-                if ndjson:
-                    _emit(message, ndjson=True)
-                else:
-                    collected.append(message)
-            if not ndjson:
-                _emit_array(collected)
+                collected.append(message)
+            _emit(collected, ndjson=ndjson, output=output, overwrite=overwrite)
 
         _run(obj, go)
 
@@ -210,6 +226,8 @@ if click is not None:
     @click.option("--since-id", type=click.IntRange(min=0), default=None)
     @click.option("--checkpoint", type=click.Path(dir_okay=False, path_type=Path), default=None)
     @click.option("--checkpoint-key", type=str, default=None)
+    @click.option("-o", "--output", type=click.Path(dir_okay=False, path_type=Path), default=None)
+    @click.option("--overwrite", is_flag=True, help="Replace an existing output file.")
     @click.pass_obj
     def watch(
         obj: dict[str, Any],
@@ -218,10 +236,14 @@ if click is not None:
         since_id: int | None,
         checkpoint: Path | None,
         checkpoint_key: str | None,
+        output: Path | None,
+        overwrite: bool,
     ) -> None:
         """Stream new posts as NDJSON until interrupted."""
 
         async def go(client: TeleGlanceClient) -> None:
+            if output is not None:
+                _emit([], ndjson=True, output=output, overwrite=overwrite)
             name = client.normalize_channel(channel)
             key = checkpoint_key or f"watch:{name}"
             store = None
@@ -236,7 +258,11 @@ if click is not None:
             else:
                 since = since_id
             async for message in client.watch(name, interval=interval, since_id=since):
-                _emit(message, ndjson=True)
+                if output is None:
+                    _emit(message, ndjson=True)
+                else:
+                    with output.open("a", encoding="utf-8") as stream:
+                        stream.write(dump_json([message], ndjson=True))
                 if store is not None and state is not None:
                     state = state.record(message)
                     await store.save(key, state)

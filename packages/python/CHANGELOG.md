@@ -2,6 +2,13 @@
 
 All notable changes to TeleGlance are documented here.
 
+## 0.1.1 - 2026-08-14
+
+### Added
+
+- Public `dump_json` and `capture_json` helpers for normalized JSON and NDJSON data.
+- CLI `--output` and safe `--overwrite` options for channel, message, search, and watch captures.
+
 ## 0.1.0 - 2026-08-13
 
 ### Added
